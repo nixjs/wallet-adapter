@@ -1,6 +1,6 @@
 {
   "name": "@nixjs23n6/hd-wallet-adapter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Small package that can convert a seed phrase to a master private key and a public address. Can be used to generate those as well.",
   "sideEffects": false,
   "main": "lib/cjs/index.js",

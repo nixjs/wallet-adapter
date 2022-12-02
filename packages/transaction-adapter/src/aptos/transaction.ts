@@ -1,6 +1,7 @@
 import { Interfaces, Types } from "@nixjs23n6/types";
 import { BaseEnums as HdWalletEnums } from "@nixjs23n6/hd-wallet-adapter";
 import { Types as AptosTypes } from "aptos";
+import { RateLimit } from "async-sema";
 import { uniqBy } from "lodash-es";
 import { BaseProvider } from "../base";
 import { BaseTypes } from "../types";
@@ -46,6 +47,7 @@ export class AptosTransaction extends BaseProvider {
       let accounts: BaseTypes.Transaction[] = [];
       let deposits: BaseTypes.Transaction[] = [];
       let withdraws: BaseTypes.Transaction[] = [];
+      const limit = RateLimit(5); // rps
       if (nodeURL && address) {
         const resources = await AptosApiRequest.fetchAccountResourcesApi(
           nodeURL,
@@ -69,6 +71,7 @@ export class AptosTransaction extends BaseProvider {
 
           if (ourResources.length > 0) {
             for (let r = 0; r < ourResources.length; r++) {
+              await limit();
               const target = ourResources[r];
               const { deposit_events, withdraw_events } = target.data as any;
               const coinType = target.type;
@@ -139,6 +142,7 @@ export class AptosTransaction extends BaseProvider {
             accountTxesResponse.data,
             address
           );
+        console.log(accountTxesResponse);
         const txns = uniqBy(
           [...accounts, ...deposits, ...withdraws].sort(
             (o1, o2) => Number(o2.timestamp) - Number(o1.timestamp)
@@ -149,6 +153,7 @@ export class AptosTransaction extends BaseProvider {
       }
       return [];
     } catch (_error) {
+      console.log(_error);
       return [];
     }
   }
@@ -160,7 +165,7 @@ export class AptosTransaction extends BaseProvider {
     return accounts.map((mTxn: any) => {
       let txObj: Types.Undefined<BaseTypes.TransactionObject>;
       let txType: BaseEnums.TransactionType = BaseEnums.TransactionType.UNKNOWN;
-      let to = "";
+      let to: string = "";
       if (
         String(mTxn.payload.function).includes(
           AptosEnums.PayloadFunctionType.TRANSFER
@@ -174,11 +179,33 @@ export class AptosTransaction extends BaseProvider {
             ? BaseEnums.TransactionType.SEND
             : BaseEnums.TransactionType.UNKNOWN;
         to = mTxn.payload.arguments?.[0];
-        txObj = {
-          balance: mTxn.payload.arguments?.[1],
-          symbol: AptosCoinSymbol,
-          type: "coin",
-        } as BaseTypes.CoinObject;
+        if (
+          String(mTxn.payload.function).includes(
+            AptosEnums.PayloadFunctionType.TRANSFER
+          )
+        ) {
+          let symbol = "";
+          if (mTxn.payload?.type_arguments.length > 0) {
+            if (mTxn.payload?.type_arguments?.[0].includes(BaseCoinType)) {
+              symbol = AptosCoinSymbol;
+            } else symbol = mTxn.payload?.type_arguments[0].split("::")?.[2];
+          }
+          txObj = {
+            balance: mTxn.payload.arguments?.[1],
+            type: "coin",
+            symbol: symbol,
+          } as BaseTypes.CoinObject;
+        } else if (
+          String(mTxn.payload.function).includes(
+            AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
+          )
+        ) {
+          txObj = {
+            balance: mTxn.payload.arguments?.[1],
+            type: "coin",
+            symbol: AptosCoinSymbol,
+          } as BaseTypes.CoinObject;
+        }
       } else if (
         String(mTxn.payload.function).includes(
           AptosEnums.PayloadFunctionType.MINT_TOKEN
@@ -286,7 +313,7 @@ export class AptosTransaction extends BaseProvider {
     return txns.map((txn: any) => {
       let txObj: Types.Undefined<BaseTypes.TransactionObject>;
       let txType: BaseEnums.TransactionType = BaseEnums.TransactionType.UNKNOWN;
-      let to = "";
+      let to: string = "";
       if (
         String(txn.payload.function).includes(
           AptosEnums.PayloadFunctionType.TRANSFER
@@ -306,9 +333,11 @@ export class AptosTransaction extends BaseProvider {
           )
         ) {
           let symbol = "";
-          if (txn.payload?.type_arguments[0].includes(BaseCoinType)) {
-            symbol = AptosCoinSymbol;
-          } else symbol = txn.payload?.type_arguments[0].split("::")?.[2];
+          if (txn.payload?.type_arguments.length > 0) {
+            if (txn.payload?.type_arguments[0].includes(BaseCoinType)) {
+              symbol = AptosCoinSymbol;
+            } else symbol = txn.payload?.type_arguments[0].split("::")?.[2];
+          }
           txObj = {
             balance: txn.payload.arguments?.[1],
             type: "coin",

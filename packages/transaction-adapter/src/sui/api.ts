@@ -9,6 +9,7 @@ import {
   getPaySuiTransaction,
   getMoveObject,
 } from "@mysten/sui.js";
+import { RateLimit } from "async-sema";
 import { Coin, Nft } from "./object";
 import { BaseTypes } from "../types";
 import { BaseEnums } from "../enums";
@@ -31,9 +32,11 @@ export namespace SUIApiRequest {
 
     const effects = await query.getTransactionWithEffectsBatch(digests);
     const results = [];
+
+    const limit = RateLimit(5); // rps
     for (const effect of effects) {
       const data = getTransactionData(effect.certificate);
-
+      await limit();
       for (const tx of data.transactions) {
         const transferSui = getTransferSuiTransaction(tx);
         const transferObject = getTransferObjectTransaction(tx);

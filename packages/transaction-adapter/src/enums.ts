@@ -1,14 +1,14 @@
 export namespace BaseEnums {
-    export enum TransactionType {
-        RECEIVE,
-        SEND,
-        MINT,
-        SCRIPT,
-        CLAIM,
-        UNKNOWN,
-    }
-    export enum TransactionStatus {
-        FAILED,
-        SUCCESS,
-    }
+  export enum TransactionType {
+    RECEIVE,
+    SEND,
+    MINT,
+    SCRIPT,
+    CLAIM,
+    UNKNOWN,
+  }
+  export enum TransactionStatus {
+    FAILED,
+    SUCCESS,
+  }
 }

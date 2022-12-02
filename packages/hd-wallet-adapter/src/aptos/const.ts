@@ -1,3 +1,3 @@
 export namespace AptosWalletConfig {
-    export const CoinType = 637
+  export const CoinType = 637;
 }

@@ -46,7 +46,7 @@
   "peerDependencies": {
     "@mysten/sui.js": "^0.17.1",
     "@nixjs23n6/types": "^1.0.15",
-    "@nixjs23n6/utilities-adapter": "^1.1.5"
+    "@nixjs23n6/utilities-adapter": "^1.1.6"
   },
   "devDependencies": {
     "@mysten/sui.js": "^0.17.1",

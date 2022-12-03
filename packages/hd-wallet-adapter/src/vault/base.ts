@@ -1,5 +1,4 @@
-import { HexString } from "../hex_string";
-import { VaultTypes } from "./types";
+import { HexString, VaultTypes } from "@nixjs23n6/utilities-adapter";
 
 export abstract class BaseProvider {
   abstract getAccountFromMnemonic(

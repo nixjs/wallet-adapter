@@ -1,25 +1,19 @@
 import { Interfaces, Types } from "@nixjs23n6/types";
-import { BaseEnums as HdWalletEnums } from "@nixjs23n6/hd-wallet-adapter";
+import {
+  TransactionTypes,
+  TransactionEnums,
+  AptosUtil,
+  ProviderEnums,
+  BaseConst,
+} from "@nixjs23n6/utilities-adapter";
 import { Types as AptosTypes } from "aptos";
 import { RateLimit } from "async-sema";
 import { uniqBy } from "lodash-es";
 import { BaseProvider } from "../base";
-import { BaseTypes } from "../types";
-import { BaseEnums } from "../enums";
-import { BaseConst } from "../const";
-import { AptosEnums } from "./enums";
-import { AptosApiRequest } from "./api";
-import {
-  AptosCoinStore,
-  AptosTokenStore,
-  AptosCoinSymbol,
-  BaseCoinType,
-  BaseCoinStore,
-} from "./const";
 
 export class AptosTransaction extends BaseProvider {
-  public get type(): HdWalletEnums.Provider {
-    return HdWalletEnums.Provider.APTOS;
+  public get type(): ProviderEnums.Provider {
+    return ProviderEnums.Provider.APTOS;
   }
 
   getCoinAddress(resource: string): string | undefined {
@@ -42,17 +36,18 @@ export class AptosTransaction extends BaseProvider {
     address: string,
     offset = BaseConst.BaseQuery.offset,
     size = BaseConst.BaseQuery.size
-  ): Promise<BaseTypes.Transaction[]> {
+  ): Promise<TransactionTypes.Transaction[]> {
     try {
-      let accounts: BaseTypes.Transaction[] = [];
-      let deposits: BaseTypes.Transaction[] = [];
-      let withdraws: BaseTypes.Transaction[] = [];
+      let accounts: TransactionTypes.Transaction[] = [];
+      let deposits: TransactionTypes.Transaction[] = [];
+      let withdraws: TransactionTypes.Transaction[] = [];
       const limit = RateLimit(5); // rps
       if (nodeURL && address) {
-        const resources = await AptosApiRequest.fetchAccountResourcesApi(
-          nodeURL,
-          address
-        );
+        const resources =
+          await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
+            nodeURL,
+            address
+          );
         if (
           resources.status === "SUCCESS" &&
           resources.data &&
@@ -65,8 +60,8 @@ export class AptosTransaction extends BaseProvider {
             }))
             .filter(
               (n) =>
-                n.type.includes(BaseCoinStore) ||
-                n.type.includes(AptosTokenStore)
+                n.type.includes(AptosUtil.BaseCoinStore) ||
+                n.type.includes(AptosUtil.AptosTokenStore)
             );
 
           if (ourResources.length > 0) {
@@ -79,21 +74,22 @@ export class AptosTransaction extends BaseProvider {
                 if (Number(withdraw_events?.counter) > 0) {
                   const withdrawEvents: Interfaces.ResponseData<
                     (AptosTypes.Event & { version: string })[]
-                  > = await AptosApiRequest.fetchEventsByEventHandleApi(
-                    nodeURL,
-                    address,
-                    AptosCoinStore,
-                    AptosEnums.TxEvent.WITHDRAW_EVENT,
-                    200,
-                    offset
-                  );
+                  > =
+                    await AptosUtil.AptosApiRequest.fetchEventsByEventHandleApi(
+                      nodeURL,
+                      address,
+                      AptosUtil.AptosCoinStore,
+                      AptosUtil.AptosEnums.TxEvent.WITHDRAW_EVENT,
+                      200,
+                      offset
+                    );
                   if (
                     withdrawEvents.status === "SUCCESS" &&
                     withdrawEvents.data
                   ) {
                     const withdrawsTnx = await this.getTransactionByVersion(
                       withdrawEvents.data,
-                      AptosEnums.TxEvent.WITHDRAW_EVENT,
+                      AptosUtil.AptosEnums.TxEvent.WITHDRAW_EVENT,
                       nodeURL
                     );
                     withdraws = withdraws.concat(withdrawsTnx);
@@ -102,21 +98,22 @@ export class AptosTransaction extends BaseProvider {
                 if (Number(deposit_events?.counter) > 0) {
                   const depositEvents: Interfaces.ResponseData<
                     (AptosTypes.Event & { version: string })[]
-                  > = await AptosApiRequest.fetchEventsByEventHandleApi(
-                    nodeURL,
-                    address,
-                    coinType,
-                    AptosEnums.TxEvent.DEPOSIT_EVENT,
-                    200,
-                    offset
-                  );
+                  > =
+                    await AptosUtil.AptosApiRequest.fetchEventsByEventHandleApi(
+                      nodeURL,
+                      address,
+                      coinType,
+                      AptosUtil.AptosEnums.TxEvent.DEPOSIT_EVENT,
+                      200,
+                      offset
+                    );
                   if (
                     depositEvents.status === "SUCCESS" &&
                     depositEvents.data
                   ) {
                     const depositTxn = await this.getTransactionByVersion(
                       depositEvents.data,
-                      AptosEnums.TxEvent.DEPOSIT_EVENT,
+                      AptosUtil.AptosEnums.TxEvent.DEPOSIT_EVENT,
                       nodeURL
                     );
                     deposits = deposits.concat(depositTxn);
@@ -128,7 +125,7 @@ export class AptosTransaction extends BaseProvider {
         }
         const accountTxesResponse: Interfaces.ResponseData<
           AptosTypes.Transaction[]
-        > = await AptosApiRequest.fetchAccountTransactionsApi(
+        > = await AptosUtil.AptosApiRequest.fetchAccountTransactionsApi(
           nodeURL,
           address,
           200,
@@ -161,67 +158,70 @@ export class AptosTransaction extends BaseProvider {
   getTransactionByAccount(
     accounts: AptosTypes.Transaction[],
     address: string
-  ): BaseTypes.Transaction[] {
+  ): TransactionTypes.Transaction[] {
     return accounts.map((mTxn: any) => {
-      let txObj: Types.Undefined<BaseTypes.TransactionObject>;
-      let txType: BaseEnums.TransactionType = BaseEnums.TransactionType.UNKNOWN;
-      let to: string = "";
+      let txObj: Types.Undefined<TransactionTypes.TransactionObject>;
+      let txType: TransactionEnums.TransactionType =
+        TransactionEnums.TransactionType.UNKNOWN;
+      let to = "";
       if (
         String(mTxn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.TRANSFER
+          AptosUtil.AptosEnums.PayloadFunctionType.TRANSFER
         ) ||
         String(mTxn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
+          AptosUtil.AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
         )
       ) {
         txType =
           mTxn.sender === address
-            ? BaseEnums.TransactionType.SEND
-            : BaseEnums.TransactionType.UNKNOWN;
+            ? TransactionEnums.TransactionType.SEND
+            : TransactionEnums.TransactionType.UNKNOWN;
         to = mTxn.payload.arguments?.[0];
         if (
           String(mTxn.payload.function).includes(
-            AptosEnums.PayloadFunctionType.TRANSFER
+            AptosUtil.AptosEnums.PayloadFunctionType.TRANSFER
           )
         ) {
           let symbol = "";
           if (mTxn.payload?.type_arguments.length > 0) {
-            if (mTxn.payload?.type_arguments?.[0].includes(BaseCoinType)) {
-              symbol = AptosCoinSymbol;
+            if (
+              mTxn.payload?.type_arguments?.[0].includes(AptosUtil.BaseCoinType)
+            ) {
+              symbol = AptosUtil.AptosCoinSymbol;
             } else symbol = mTxn.payload?.type_arguments[0].split("::")?.[2];
           }
           txObj = {
             balance: mTxn.payload.arguments?.[1],
             type: "coin",
             symbol: symbol,
-          } as BaseTypes.CoinObject;
+          } as TransactionTypes.CoinObject;
         } else if (
           String(mTxn.payload.function).includes(
-            AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
+            AptosUtil.AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
           )
         ) {
           txObj = {
             balance: mTxn.payload.arguments?.[1],
             type: "coin",
-            symbol: AptosCoinSymbol,
-          } as BaseTypes.CoinObject;
+            symbol: AptosUtil.AptosCoinSymbol,
+          } as TransactionTypes.CoinObject;
         }
       } else if (
         String(mTxn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.MINT_TOKEN
+          AptosUtil.AptosEnums.PayloadFunctionType.MINT_TOKEN
         ) ||
         String(mTxn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.MINT_COLLECTION
+          AptosUtil.AptosEnums.PayloadFunctionType.MINT_COLLECTION
         )
       ) {
         txType =
           mTxn.sender === address
-            ? BaseEnums.TransactionType.MINT
-            : BaseEnums.TransactionType.UNKNOWN;
+            ? TransactionEnums.TransactionType.MINT
+            : TransactionEnums.TransactionType.UNKNOWN;
         to = mTxn.sender;
         if (
           String(mTxn.payload.function).includes(
-            AptosEnums.PayloadFunctionType.MINT_TOKEN
+            AptosUtil.AptosEnums.PayloadFunctionType.MINT_TOKEN
           )
         ) {
           txObj = {
@@ -229,10 +229,10 @@ export class AptosTransaction extends BaseProvider {
             name: mTxn.payload.arguments?.[1],
             description: mTxn.payload.arguments?.[2],
             url: mTxn.payload.arguments?.[5],
-          } as BaseTypes.NFTObject;
+          } as TransactionTypes.NFTObject;
         } else if (
           String(mTxn.payload.function).includes(
-            AptosEnums.PayloadFunctionType.MINT_COLLECTION
+            AptosUtil.AptosEnums.PayloadFunctionType.MINT_COLLECTION
           )
         ) {
           txObj = {
@@ -240,41 +240,41 @@ export class AptosTransaction extends BaseProvider {
             name: mTxn.payload.arguments?.[0],
             description: mTxn.payload.arguments?.[1],
             url: mTxn.payload.arguments?.[2],
-          } as BaseTypes.NFTObject;
+          } as TransactionTypes.NFTObject;
         }
       } else if (
         String(mTxn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.CLAIM
+          AptosUtil.AptosEnums.PayloadFunctionType.CLAIM
         )
       ) {
         txType =
           mTxn.sender === address
-            ? BaseEnums.TransactionType.CLAIM
-            : BaseEnums.TransactionType.UNKNOWN;
+            ? TransactionEnums.TransactionType.CLAIM
+            : TransactionEnums.TransactionType.UNKNOWN;
         to = mTxn.sender;
         txObj = {
           balance: mTxn.payload.arguments?.[2],
-          symbol: AptosCoinSymbol,
+          symbol: AptosUtil.AptosCoinSymbol,
           type: "coin",
-        } as BaseTypes.CoinObject;
+        } as TransactionTypes.CoinObject;
       } else if (
         !mTxn.payload.function &&
         mTxn.payload.type === "script_payload"
       ) {
         txType =
           mTxn.sender === address
-            ? BaseEnums.TransactionType.SCRIPT
-            : BaseEnums.TransactionType.UNKNOWN;
+            ? TransactionEnums.TransactionType.SCRIPT
+            : TransactionEnums.TransactionType.UNKNOWN;
         to = mTxn.sender;
         txObj = {
           ...mTxn.payload,
-        } as BaseTypes.ScriptObject;
+        } as TransactionTypes.ScriptObject;
       } else {
-        txType = BaseEnums.TransactionType.UNKNOWN;
+        txType = TransactionEnums.TransactionType.UNKNOWN;
         to = mTxn.sender;
         txObj = {
           ...mTxn.payload,
-        } as BaseTypes.ScriptObject;
+        } as TransactionTypes.ScriptObject;
       }
       return {
         from: mTxn.sender,
@@ -283,25 +283,25 @@ export class AptosTransaction extends BaseProvider {
         hash: mTxn.hash,
         timestamp: mTxn.timestamp,
         status: mTxn.success
-          ? BaseEnums.TransactionStatus.SUCCESS
-          : BaseEnums.TransactionStatus.FAILED,
+          ? TransactionEnums.TransactionStatus.SUCCESS
+          : TransactionEnums.TransactionStatus.FAILED,
         type: txType,
         data: txObj,
         version: mTxn.version,
-      } as BaseTypes.Transaction;
+      } as TransactionTypes.Transaction;
     });
   }
 
   async getTransactionByVersion(
     events: (AptosTypes.Event & { version: string })[],
-    event: AptosEnums.TxEvent,
+    event: AptosUtil.AptosEnums.TxEvent,
     nodeURL: string
-  ): Promise<BaseTypes.Transaction[]> {
+  ): Promise<TransactionTypes.Transaction[]> {
     const txns: AptosTypes.Transaction[] = [];
     for (let i = 0; i < events.length; i++) {
       const element = events[i];
       const txnResponse: Interfaces.ResponseData<AptosTypes.Transaction> =
-        await AptosApiRequest.fetchTransactionsByVersionApi(
+        await AptosUtil.AptosApiRequest.fetchTransactionsByVersionApi(
           nodeURL,
           element.version
         );
@@ -311,84 +311,87 @@ export class AptosTransaction extends BaseProvider {
     }
 
     return txns.map((txn: any) => {
-      let txObj: Types.Undefined<BaseTypes.TransactionObject>;
-      let txType: BaseEnums.TransactionType = BaseEnums.TransactionType.UNKNOWN;
-      let to: string = "";
+      let txObj: Types.Undefined<TransactionTypes.TransactionObject>;
+      let txType: TransactionEnums.TransactionType =
+        TransactionEnums.TransactionType.UNKNOWN;
+      let to = "";
       if (
         String(txn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.TRANSFER
+          AptosUtil.AptosEnums.PayloadFunctionType.TRANSFER
         ) ||
         String(txn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
+          AptosUtil.AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
         )
       ) {
         txType =
-          event === AptosEnums.TxEvent.DEPOSIT_EVENT
-            ? BaseEnums.TransactionType.RECEIVE
-            : BaseEnums.TransactionType.SEND;
+          event === AptosUtil.AptosEnums.TxEvent.DEPOSIT_EVENT
+            ? TransactionEnums.TransactionType.RECEIVE
+            : TransactionEnums.TransactionType.SEND;
         to = txn.payload.arguments?.[0];
         if (
           String(txn.payload.function).includes(
-            AptosEnums.PayloadFunctionType.TRANSFER
+            AptosUtil.AptosEnums.PayloadFunctionType.TRANSFER
           )
         ) {
           let symbol = "";
           if (txn.payload?.type_arguments.length > 0) {
-            if (txn.payload?.type_arguments[0].includes(BaseCoinType)) {
-              symbol = AptosCoinSymbol;
+            if (
+              txn.payload?.type_arguments[0].includes(AptosUtil.BaseCoinType)
+            ) {
+              symbol = AptosUtil.AptosCoinSymbol;
             } else symbol = txn.payload?.type_arguments[0].split("::")?.[2];
           }
           txObj = {
             balance: txn.payload.arguments?.[1],
             type: "coin",
             symbol: symbol,
-          } as BaseTypes.CoinObject;
+          } as TransactionTypes.CoinObject;
         } else if (
           String(txn.payload.function).includes(
-            AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
+            AptosUtil.AptosEnums.PayloadFunctionType.APTOS_ACCOUNT_TRANSFER
           )
         ) {
           txObj = {
             balance: txn.payload.arguments?.[1],
             type: "coin",
-            symbol: AptosCoinSymbol,
-          } as BaseTypes.CoinObject;
+            symbol: AptosUtil.AptosCoinSymbol,
+          } as TransactionTypes.CoinObject;
         }
       } else if (
         String(txn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.CLAIM
+          AptosUtil.AptosEnums.PayloadFunctionType.CLAIM
         )
       ) {
-        txType = BaseEnums.TransactionType.CLAIM;
+        txType = TransactionEnums.TransactionType.CLAIM;
         txObj = {
           balance: txn.payload.arguments?.[2],
-          symbol: AptosCoinSymbol,
+          symbol: AptosUtil.AptosCoinSymbol,
           type: "coin",
-        } as BaseTypes.CoinObject;
+        } as TransactionTypes.CoinObject;
       }
-      // else if (String(txn.payload.function).includes(AptosEnums.PayloadFunctionType.MINT)) {
-      //     console.log('AptosEnums.PayloadFunctionType.MINT')
+      // else if (String(txn.payload.function).includes(AptosUtil.AptosEnums.PayloadFunctionType.MINT)) {
+      //     console.log('AptosUtil.AptosEnums.PayloadFunctionType.MINT')
       //     console.log(txn)
-      //     txType = BaseEnums.TransactionType.MINT
+      //     txType = TransactionEnums.TransactionType.MINT
       //     // to = ''
       //     amount = txn.payload.arguments?.[0]
       // }
       else if (
         (!txn.payload.function && txn.payload.type === "script_payload") ||
         String(txn.payload.function).includes(
-          AptosEnums.PayloadFunctionType.ACCEPT_OFFER_COLLECTION
+          AptosUtil.AptosEnums.PayloadFunctionType.ACCEPT_OFFER_COLLECTION
         )
       ) {
-        txType = BaseEnums.TransactionType.SCRIPT;
+        txType = TransactionEnums.TransactionType.SCRIPT;
         txObj = {
           ...txn.payload,
-        } as BaseTypes.ScriptObject;
+        } as TransactionTypes.ScriptObject;
       } else {
-        txType = BaseEnums.TransactionType.UNKNOWN;
+        txType = TransactionEnums.TransactionType.UNKNOWN;
         to = txn.sender;
         txObj = {
           ...txn.payload,
-        } as BaseTypes.ScriptObject;
+        } as TransactionTypes.ScriptObject;
       }
       return {
         from: txn.sender,
@@ -397,12 +400,12 @@ export class AptosTransaction extends BaseProvider {
         hash: txn.hash,
         timestamp: txn.timestamp,
         status: txn.success
-          ? BaseEnums.TransactionStatus.SUCCESS
-          : BaseEnums.TransactionStatus.FAILED,
+          ? TransactionEnums.TransactionStatus.SUCCESS
+          : TransactionEnums.TransactionStatus.FAILED,
         type: txType,
         data: txObj,
         version: txn.version,
-      } as BaseTypes.Transaction;
+      } as TransactionTypes.Transaction;
     });
   }
 }

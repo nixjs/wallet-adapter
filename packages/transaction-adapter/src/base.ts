@@ -1,4 +1,4 @@
-import { BaseTypes } from "./types";
+import { TransactionTypes } from "@nixjs23n6/utilities-adapter";
 
 export abstract class BaseProvider {
   abstract getTransactions(
@@ -6,5 +6,5 @@ export abstract class BaseProvider {
     address: string,
     offset?: number,
     size?: number
-  ): Promise<BaseTypes.Transaction[]>;
+  ): Promise<TransactionTypes.Transaction[]>;
 }

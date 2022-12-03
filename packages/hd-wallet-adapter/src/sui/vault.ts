@@ -1,12 +1,14 @@
 import * as bip39 from "@scure/bip39";
 import { Buffer } from "buffer";
 import { Ed25519HdKey } from "./hdkey";
-import { BaseProvider } from "../vault/base";
+import {
+  HexString,
+  VaultTypes,
+  ProviderEnums,
+  SUIUtil,
+} from "@nixjs23n6/utilities-adapter";
 import { Crypto } from "../vault/crypto";
-import { HexString } from "../hex_string";
-import { VaultTypes } from "../vault/types";
-import { BaseEnums } from "../enum";
-import { SUIWalletConfig } from "./const";
+import { BaseProvider } from "../vault/base";
 
 export class SUIVault extends BaseProvider {
   static async fromDerivePath(
@@ -34,12 +36,9 @@ export class SUIVault extends BaseProvider {
     derivationPath: number,
     mnemonic: string
   ): Promise<VaultTypes.AccountObject & { path: string }> {
-    const path = Crypto.derivationHdPath(
-      SUIWalletConfig.CoinType,
-      derivationPath
-    );
+    const path = Crypto.derivationHdPath(SUIUtil.CoinType, derivationPath);
     const ac = await SUIVault.fromDerivePath(
-      Crypto.derivationHdPath(SUIWalletConfig.CoinType, derivationPath),
+      Crypto.derivationHdPath(SUIUtil.CoinType, derivationPath),
       mnemonic
     );
     return { ...ac.toPrivateKeyObject(), path };
@@ -53,11 +52,11 @@ export class SUIVault extends BaseProvider {
   }
 
   public get coinType(): number {
-    return SUIWalletConfig.CoinType;
+    return SUIUtil.CoinType;
   }
 
-  public get type(): BaseEnums.Provider {
-    return BaseEnums.Provider.SUI;
+  public get type(): ProviderEnums.Provider {
+    return ProviderEnums.Provider.SUI;
   }
 
   address(): string {

@@ -1,18 +1,20 @@
-import { BaseEnums as HdWalletEnums } from "@nixjs23n6/hd-wallet-adapter";
+import {
+  TransactionTypes,
+  ProviderEnums,
+  SUIUtil,
+} from "@nixjs23n6/utilities-adapter";
 import { BaseProvider } from "../base";
-import { BaseTypes } from "../types";
-import { SUIApiRequest } from "./api";
 
 export class SUITransaction extends BaseProvider {
-  public get type(): HdWalletEnums.Provider {
-    return HdWalletEnums.Provider.SUI;
+  public get type(): ProviderEnums.Provider {
+    return ProviderEnums.Provider.SUI;
   }
   async getTransactions(
     nodeURL: string,
     address: string
-  ): Promise<BaseTypes.Transaction[]> {
+  ): Promise<TransactionTypes.Transaction[]> {
     try {
-      const txns = await SUIApiRequest.getTransactionsForAddress(
+      const txns = await SUIUtil.SUIApiRequest.getTransactionsForAddress(
         nodeURL,
         address
       );

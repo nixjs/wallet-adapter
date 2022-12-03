@@ -1,13 +1,14 @@
-import { AptosAccount, AptosAccountObject } from "aptos";
 import * as bip39 from "@scure/bip39";
 import { Buffer } from "buffer";
 import { Ed25519HdKey } from "./hdkey";
+import {
+  HexString,
+  VaultTypes,
+  ProviderEnums,
+  AptosUtil,
+} from "@nixjs23n6/utilities-adapter";
 import { BaseProvider } from "../vault/base";
 import { Crypto } from "../vault/crypto";
-import { HexString } from "../hex_string";
-import { VaultTypes } from "../vault/types";
-import { BaseEnums } from "../enum";
-import { AptosWalletConfig } from "./const";
 
 export class AptosVault extends BaseProvider {
   static async fromDerivePath(
@@ -34,12 +35,9 @@ export class AptosVault extends BaseProvider {
     derivationPath: number,
     mnemonic: string
   ): Promise<VaultTypes.AccountObject & { path: string }> {
-    const path = Crypto.derivationHdPath(
-      AptosWalletConfig.CoinType,
-      derivationPath
-    );
+    const path = Crypto.derivationHdPath(AptosUtil.CoinType, derivationPath);
     const ac = await AptosVault.fromDerivePath(
-      Crypto.derivationHdPath(AptosWalletConfig.CoinType, derivationPath),
+      Crypto.derivationHdPath(AptosUtil.CoinType, derivationPath),
       mnemonic
     );
     return { ...ac.toPrivateKeyObject(), path };
@@ -53,11 +51,11 @@ export class AptosVault extends BaseProvider {
   }
 
   public get coinType(): number {
-    return AptosWalletConfig.CoinType;
+    return AptosUtil.CoinType;
   }
 
-  public get type(): BaseEnums.Provider {
-    return BaseEnums.Provider.APTOS;
+  public get type(): ProviderEnums.Provider {
+    return ProviderEnums.Provider.APTOS;
   }
 
   address(): string {

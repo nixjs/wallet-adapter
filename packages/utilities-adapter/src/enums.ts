@@ -1,4 +1,11 @@
-export namespace BaseEnums {
+export namespace ProviderEnums {
+  export enum Provider {
+    APTOS = "aptos",
+    SUI = "sui",
+  }
+}
+
+export namespace TransactionEnums {
   export enum TransactionType {
     RECEIVE,
     SEND,

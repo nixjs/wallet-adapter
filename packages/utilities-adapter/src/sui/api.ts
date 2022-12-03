@@ -11,14 +11,14 @@ import {
 } from "@mysten/sui.js";
 import { RateLimit } from "async-sema";
 import { Coin, Nft } from "./object";
-import { BaseTypes } from "../types";
-import { BaseEnums } from "../enums";
+import { TransactionTypes } from "../types";
+import { TransactionEnums } from "../enums";
 
 export namespace SUIApiRequest {
   export async function getTransactionsForAddress(
     nodeURL: string,
     address: string
-  ): Promise<BaseTypes.Transaction[]> {
+  ): Promise<TransactionTypes.Transaction[]> {
     const query = new JsonRpcProvider(nodeURL, {
       skipDataValidation: false,
     });
@@ -47,8 +47,8 @@ export namespace SUIApiRequest {
             timestamp: effect.timestamp_ms,
             status:
               getExecutionStatusType(effect) === "success"
-                ? BaseEnums.TransactionStatus.SUCCESS
-                : BaseEnums.TransactionStatus.FAILED,
+                ? TransactionEnums.TransactionStatus.SUCCESS
+                : TransactionEnums.TransactionStatus.FAILED,
             hash: effect.certificate.transactionDigest,
             gasFee:
               effect.effects.gasUsed.computationCost +
@@ -62,24 +62,24 @@ export namespace SUIApiRequest {
                 transferSui.amount ? BigInt(transferSui.amount) : BigInt(0)
               ),
               symbol: "SUI",
-            } as BaseTypes.CoinObject,
+            } as TransactionTypes.CoinObject,
             type:
               address === data.sender
-                ? BaseEnums.TransactionType.SEND
-                : BaseEnums.TransactionType.RECEIVE,
+                ? TransactionEnums.TransactionType.SEND
+                : TransactionEnums.TransactionType.RECEIVE,
           });
         } else if (paySui) {
           const coin = paySui.coins[0];
           const resp = await query.getObject(coin.objectId);
           const obj = getMoveObject(resp);
-          let txObj: Types.Undefined<BaseTypes.TransactionObject>;
+          let txObj: Types.Undefined<TransactionTypes.TransactionObject>;
           if (obj && Coin.isCoin(obj)) {
             const coinObj = Coin.getCoinObject(obj);
             txObj = {
               type: "coin",
               symbol: coinObj.symbol,
               balance: String(coinObj.balance),
-            } as BaseTypes.CoinObject;
+            } as TransactionTypes.CoinObject;
           } else if (obj && Nft.isNft(obj)) {
             const nftObject = Nft.getNftObject(obj, undefined);
             txObj = {
@@ -87,15 +87,15 @@ export namespace SUIApiRequest {
               name: nftObject.name,
               description: nftObject.description,
               url: nftObject.url,
-            } as BaseTypes.NFTObject;
+            } as TransactionTypes.NFTObject;
           }
           if (txObj) {
             results.push({
               timestamp: effect.timestamp_ms,
               status:
                 getExecutionStatusType(effect) === "success"
-                  ? BaseEnums.TransactionStatus.SUCCESS
-                  : BaseEnums.TransactionStatus.FAILED,
+                  ? TransactionEnums.TransactionStatus.SUCCESS
+                  : TransactionEnums.TransactionStatus.FAILED,
               hash: effect.certificate.transactionDigest,
               gasFee:
                 effect.effects.gasUsed.computationCost +
@@ -106,14 +106,14 @@ export namespace SUIApiRequest {
               data: txObj,
               type:
                 address === data.sender
-                  ? BaseEnums.TransactionType.SEND
-                  : BaseEnums.TransactionType.RECEIVE,
+                  ? TransactionEnums.TransactionType.SEND
+                  : TransactionEnums.TransactionType.RECEIVE,
             });
           }
         } else if (transferObject) {
           const resp = await query.getObject(transferObject.objectRef.objectId);
           const obj = getMoveObject(resp);
-          let txObj: Types.Undefined<BaseTypes.TransactionObject>;
+          let txObj: Types.Undefined<TransactionTypes.TransactionObject>;
           // TODO: for now provider does not support to get histrorical object data,
           // so the record here may not be accurate.
           if (obj && Coin.isCoin(obj)) {
@@ -130,7 +130,7 @@ export namespace SUIApiRequest {
               name: nftObject.name,
               description: nftObject.description,
               url: nftObject.url,
-            } as BaseTypes.NFTObject;
+            } as TransactionTypes.NFTObject;
           }
           // TODO: handle more object types
           if (txObj) {
@@ -138,8 +138,8 @@ export namespace SUIApiRequest {
               timestamp: effect.timestamp_ms,
               status:
                 getExecutionStatusType(effect) === "success"
-                  ? BaseEnums.TransactionStatus.SUCCESS
-                  : BaseEnums.TransactionStatus.FAILED,
+                  ? TransactionEnums.TransactionStatus.SUCCESS
+                  : TransactionEnums.TransactionStatus.FAILED,
               hash: effect.certificate.transactionDigest,
               gasFee:
                 effect.effects.gasUsed.computationCost +
@@ -150,12 +150,12 @@ export namespace SUIApiRequest {
               data: txObj,
               type:
                 address === data.sender
-                  ? BaseEnums.TransactionType.SEND
-                  : BaseEnums.TransactionType.RECEIVE,
+                  ? TransactionEnums.TransactionType.SEND
+                  : TransactionEnums.TransactionType.RECEIVE,
             });
           }
         } else if (moveCall) {
-          let txObj: Types.Undefined<BaseTypes.TransactionObject>;
+          let txObj: Types.Undefined<TransactionTypes.TransactionObject>;
           if (
             moveCall.function === "mint" &&
             moveCall.arguments &&
@@ -166,7 +166,7 @@ export namespace SUIApiRequest {
               name: moveCall.arguments[0],
               description: moveCall.arguments[1],
               url: moveCall.arguments[2],
-            } as BaseTypes.NFTObject;
+            } as TransactionTypes.NFTObject;
           } else
             txObj = {
               type: "move_call",
@@ -176,13 +176,13 @@ export namespace SUIApiRequest {
               arguments: moveCall.arguments?.map((arg) => JSON.stringify(arg)),
               created: [],
               mutated: [],
-            } as BaseTypes.ScriptObject;
+            } as TransactionTypes.ScriptObject;
           results.push({
             timestamp: effect.timestamp_ms,
             status:
               getExecutionStatusType(effect) === "success"
-                ? BaseEnums.TransactionStatus.SUCCESS
-                : BaseEnums.TransactionStatus.FAILED,
+                ? TransactionEnums.TransactionStatus.SUCCESS
+                : TransactionEnums.TransactionStatus.FAILED,
             hash: effect.certificate.transactionDigest,
             gasFee:
               effect.effects.gasUsed.computationCost +
@@ -193,8 +193,8 @@ export namespace SUIApiRequest {
             data: txObj,
             type:
               moveCall.function === "mint"
-                ? BaseEnums.TransactionType.MINT
-                : BaseEnums.TransactionType.SCRIPT,
+                ? TransactionEnums.TransactionType.MINT
+                : TransactionEnums.TransactionType.SCRIPT,
           });
         }
       }

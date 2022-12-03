@@ -1,8 +1,8 @@
 import nacl from "tweetnacl";
 import { sha3_256 as sha3Hash } from "@noble/hashes/sha3";
+import { HexString } from "@nixjs23n6/utilities-adapter";
 import * as hmac from "js-crypto-hmac";
 import { Buffer } from "buffer";
-import { HexString } from "../hex_string";
 
 export class Ed25519HdKey {
   keyPair: nacl.SignKeyPair;

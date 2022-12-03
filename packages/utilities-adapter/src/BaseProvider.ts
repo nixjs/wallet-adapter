@@ -1,81 +1,16 @@
 import { Types } from "@nixjs23n6/types";
-import { ProviderEnums, VaultTypes } from "@nixjs23n6/utilities-adapter";
-import { BaseProvider } from "./base";
+import { ProviderEnums } from "./enums";
 
-export class Vault {
+export class BaseProvider {
   provider: string;
   private readonly _classes: Types.Class[];
   private _container: Types.Object<any> = {};
   private _currentType?: ProviderEnums.Provider;
   private _prevType?: ProviderEnums.Provider;
-  private _mnemonic?: string;
 
-  constructor(args: Types.Class[], provider?: string, mnemonics?: string) {
+  constructor(args: Types.Class[], provider?: string) {
     this.provider = provider || "";
     this._classes = args;
-    this._mnemonic = mnemonics;
-  }
-
-  async generateHDWallets(): Promise<Record<
-    string,
-    VaultTypes.AccountObject & { path: string }
-  > | null> {
-    try {
-      if (this._classes.length > 0 && this._mnemonic) {
-        const accounts: Record<
-          string,
-          VaultTypes.AccountObject & { path: string }
-        > = {};
-
-        for (let index = 0; index < this._classes.length; index++) {
-          const Provider: Types.Class = this._classes[index];
-          const instance: BaseProvider = new Provider();
-          const account = await instance.getAccountFromMnemonic(
-            0,
-            this._mnemonic
-          );
-          Object.assign(accounts, {
-            [Provider.prototype.type]: account,
-          });
-        }
-        return accounts;
-      }
-      return null;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  static getAccountProviders(
-    data: Types.Object<VaultTypes.AccountObject & { path: string }>
-  ): VaultTypes.AccountProviders {
-    const ourData = Object.keys(data);
-    const newOurData: VaultTypes.AccountProviders = {};
-    for (let i = 0; i < ourData.length; i += 1) {
-      const { address, publicKeyHex, path } = (data as any)[
-        ourData[i]
-      ] as VaultTypes.AccountObject & { path: string };
-      if (address) {
-        const pathIndex = Number(path.split("/").slice(-1)[0].split("")[0]);
-        const account: VaultTypes.AccountInfo = {
-          address: address,
-          name: `Account ${pathIndex}`,
-          display: true,
-          index: pathIndex,
-          derivationPath: path,
-          publicKey: publicKeyHex,
-        };
-        Object.assign(newOurData, {
-          [ourData[i]]: {
-            accounts: {
-              [address]: account,
-            },
-            accountActivated: address,
-          },
-        });
-      }
-    }
-    return newOurData;
   }
 
   connect(type: ProviderEnums.Provider): void {
@@ -100,7 +35,7 @@ export class Vault {
       }
       this._prevType = type;
       console.log(
-        "» Connect new blockchain:  %c" + this._currentType,
+        "» Connect new provider:  %c" + this._currentType,
         "color: #FABB51; font-size:14px"
       );
     } else {
@@ -150,6 +85,3 @@ export class Vault {
     return (this._currentType as ProviderEnums.Provider) || undefined;
   }
 }
-
-export * from "./base";
-export * from "./crypto";

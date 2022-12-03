@@ -23,4 +23,19 @@ export class SUITransaction extends BaseProvider {
       return [];
     }
   }
+
+  getAddressExplorer(
+    explorerURL: string,
+    address: string,
+    type: ProviderEnums.Network
+  ): string {
+    return `${explorerURL}/addresses/${address}?network=${type.toLowerCase()}`;
+  }
+  getTransactionExplorer(
+    explorerURL: string,
+    hash: string,
+    type: ProviderEnums.Network
+  ): string {
+    return `${explorerURL}/transactions/${hash}?network=${type.toLowerCase()}`;
+  }
 }

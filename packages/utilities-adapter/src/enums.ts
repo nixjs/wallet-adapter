@@ -3,6 +3,11 @@ export namespace ProviderEnums {
     APTOS = "aptos",
     SUI = "sui",
   }
+  export enum Network {
+    DEV_NET = "devnet",
+    TEST_NET = "testnet",
+    MAIN_NET = "mainnet",
+  }
 }
 
 export namespace TransactionEnums {

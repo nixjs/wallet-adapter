@@ -2,7 +2,7 @@ import { Types } from "@nixjs23n6/types";
 import { ProviderEnums } from "@nixjs23n6/utilities-adapter";
 import { BaseProvider } from "./base";
 
-export class Transaction {
+export class Asset {
   provider: string;
   private readonly _classes: Types.Class[];
   private _container: Types.Object<any> = {};
@@ -36,12 +36,12 @@ export class Transaction {
       }
       this._prevType = type;
       console.log(
-        "» [Transaction]Connect new provider:  %c" + this._currentType,
+        "» [Asset]Connect new provider:  %c" + this._currentType,
         "color: #FABB51; font-size:14px"
       );
     } else {
       console.log(
-        "» [Transaction]Continue to connect the current provider:  %c" +
+        "» [Asset]Continue to connect the current provider:  %c" +
           this._prevType,
         "color: #FABB51; font-size:14px"
       );

@@ -100,12 +100,13 @@ export class Vault {
       }
       this._prevType = type;
       console.log(
-        "» Connect new blockchain:  %c" + this._currentType,
+        "» [Vault]Connect new provider:  %c" + this._currentType,
         "color: #FABB51; font-size:14px"
       );
     } else {
       console.log(
-        "» Continue to connect the current provider:  %c" + this._prevType,
+        "» [Vault]Continue to connect the current provider:  %c" +
+          this._prevType,
         "color: #FABB51; font-size:14px"
       );
     }

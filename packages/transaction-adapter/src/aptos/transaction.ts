@@ -139,7 +139,6 @@ export class AptosTransaction extends BaseProvider {
             accountTxesResponse.data,
             address
           );
-        console.log(accountTxesResponse);
         const txns = uniqBy(
           [...accounts, ...deposits, ...withdraws].sort(
             (o1, o2) => Number(o2.timestamp) - Number(o1.timestamp)
@@ -150,7 +149,6 @@ export class AptosTransaction extends BaseProvider {
       }
       return [];
     } catch (_error) {
-      console.log(_error);
       return [];
     }
   }
@@ -407,5 +405,20 @@ export class AptosTransaction extends BaseProvider {
         version: txn.version,
       } as TransactionTypes.Transaction;
     });
+  }
+
+  getAddressExplorer(
+    explorerURL: string,
+    address: string,
+    type: ProviderEnums.Network
+  ): string {
+    return `${explorerURL}/account/${address}?network=${type}`;
+  }
+  getTransactionExplorer(
+    explorerURL: string,
+    hash: string,
+    type: ProviderEnums.Network
+  ): string {
+    return `${explorerURL}/txn/${hash}?network=${type}`;
   }
 }

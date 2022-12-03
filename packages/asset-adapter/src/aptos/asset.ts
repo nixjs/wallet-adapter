@@ -1,5 +1,10 @@
 import { Interfaces, Types } from "@nixjs23n6/types";
-import { ProviderEnums, AptosUtil, Helper } from "@nixjs23n6/utilities-adapter";
+import {
+  ProviderEnums,
+  AptosUtil,
+  Helper,
+  AssetTypes,
+} from "@nixjs23n6/utilities-adapter";
 import { RateLimit } from "async-sema";
 import {
   AptosClient,
@@ -8,7 +13,6 @@ import {
   TokenTypes,
 } from "aptos";
 import { BaseProvider } from "../base";
-import { BaseTypes } from "../types";
 
 export class AptosAsset extends BaseProvider {
   public get type(): ProviderEnums.Provider {
@@ -74,9 +78,9 @@ export class AptosAsset extends BaseProvider {
   async getAssets(
     nodeURL: string,
     address: string
-  ): Promise<BaseTypes.Asset[]> {
+  ): Promise<AssetTypes.Asset[]> {
     try {
-      const assets: BaseTypes.Asset[] = [];
+      const assets: AssetTypes.Asset[] = [];
       if (nodeURL && address) {
         const resources =
           await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
@@ -134,7 +138,7 @@ export class AptosAsset extends BaseProvider {
                       symbol: string;
                     };
                     if (coinInfo) {
-                      const asset: BaseTypes.Asset = {
+                      const asset: AssetTypes.Asset = {
                         assetId: resource.type,
                         name: coinInfo.name,
                         symbol: coinInfo.symbol,
@@ -157,9 +161,9 @@ export class AptosAsset extends BaseProvider {
   async getAssetBalances(
     nodeURL: string,
     address: string
-  ): Promise<BaseTypes.AssetAmount[]> {
+  ): Promise<AssetTypes.AssetAmount[]> {
     try {
-      const balances: BaseTypes.AssetAmount[] = [];
+      const balances: AssetTypes.AssetAmount[] = [];
       if (nodeURL && address) {
         const resources =
           await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
@@ -183,7 +187,7 @@ export class AptosAsset extends BaseProvider {
                 )
               ),
               assetId: resource.type,
-            } as BaseTypes.AssetAmount);
+            } as AssetTypes.AssetAmount);
           }
         }
       }
@@ -193,9 +197,9 @@ export class AptosAsset extends BaseProvider {
     }
   }
 
-  async getNFTs(nodeURL: string, address: string): Promise<BaseTypes.NFT[]> {
+  async getNFTs(nodeURL: string, address: string): Promise<AssetTypes.NFT[]> {
     try {
-      const NFTs: BaseTypes.NFT[] = [];
+      const NFTs: AssetTypes.NFT[] = [];
       if (nodeURL && address) {
         const resources =
           await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
@@ -257,15 +261,14 @@ export class AptosAsset extends BaseProvider {
                     data.name
                   );
                 if (tokenData) {
-                  const { description, name, supply, uri } = tokenData;
+                  const { description, name, uri } = tokenData;
                   NFTs.push({
-                    amount: String(supply),
                     id: Helper.stringToSlug(data.name),
                     collection: data.collection,
                     name,
                     description,
                     uri,
-                  } as BaseTypes.NFT);
+                  } as AssetTypes.NFT);
                 }
               }
             }

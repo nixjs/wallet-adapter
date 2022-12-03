@@ -19,7 +19,6 @@ export namespace AssetTypes {
     name: string;
     description: string;
     uri: string;
-    amount: string;
     metadata?: NFTMetadata;
   }
   export interface NFTMetadata {

@@ -1,9 +1,7 @@
-# @nixjs23n6/transaction-adapter
+# @nixjs23n6/asset-adapter
 
-Libraries that help you get transaction information on the blockchain
+Assets
 
 ## Install
 
-Install these dependencies:
-
-`yarn add @nixjs23n6/transaction-adapter`
+`yarn add @nixjs23n6/asset-adapter`

@@ -1,9 +1,8 @@
-import { ProviderEnums } from "@nixjs23n6/utilities-adapter";
+import { ProviderEnums, AssetTypes } from "@nixjs23n6/utilities-adapter";
 import { JsonRpcProvider, SuiMoveObject } from "@mysten/sui.js";
 import uniqBy from "lodash-es/uniqBy";
 import { SUIApiRequest } from "./api";
 import { BaseProvider } from "../base";
-import { BaseTypes } from "../types";
 
 export type CoinObject = {
   objectId: string;
@@ -22,9 +21,9 @@ export class AptosAsset extends BaseProvider {
   async getAssets(
     nodeURL: string,
     address: string
-  ): Promise<BaseTypes.Asset[]> {
+  ): Promise<AssetTypes.Asset[]> {
     try {
-      let assets: BaseTypes.Asset[] = [];
+      let assets: AssetTypes.Asset[] = [];
       const query = new JsonRpcProvider(nodeURL, {
         skipDataValidation: false,
       });
@@ -36,7 +35,7 @@ export class AptosAsset extends BaseProvider {
               assetId: c.object.type,
               name: c.symbol,
               symbol: c.symbol,
-            } as BaseTypes.Asset)
+            } as AssetTypes.Asset)
         );
       }
       return assets;
@@ -48,9 +47,9 @@ export class AptosAsset extends BaseProvider {
   async getAssetBalances(
     nodeURL: string,
     address: string
-  ): Promise<BaseTypes.AssetAmount[]> {
+  ): Promise<AssetTypes.AssetAmount[]> {
     try {
-      const balances: BaseTypes.AssetAmount[] = [];
+      const balances: AssetTypes.AssetAmount[] = [];
       if (nodeURL && address) {
         const balances = await SUIApiRequest.getCoinsBalance(nodeURL, address);
         return balances;
@@ -61,9 +60,9 @@ export class AptosAsset extends BaseProvider {
     }
   }
 
-  async getNFTs(nodeURL: string, address: string): Promise<BaseTypes.NFT[]> {
+  async getNFTs(nodeURL: string, address: string): Promise<AssetTypes.NFT[]> {
     try {
-      let NFTs: BaseTypes.NFT[] = [];
+      let NFTs: AssetTypes.NFT[] = [];
       if (nodeURL && address) {
         NFTs = await SUIApiRequest.getOwnedNfts(nodeURL, address);
       }

@@ -6,7 +6,6 @@ import {
   SuiObject,
   SuiMoveObject,
 } from "@mysten/sui.js";
-import { BaseTypes } from "../types";
 
 export namespace SUIApiRequest {
   export async function getOwnedObjects(
@@ -39,7 +38,7 @@ export namespace SUIApiRequest {
   export async function getCoinsBalance(
     nodeURL: string,
     address: string
-  ): Promise<BaseTypes.AssetAmount[]> {
+  ): Promise<AssetTypes.AssetAmount[]> {
     const query = new JsonRpcProvider(nodeURL, {
       skipDataValidation: false,
     });
@@ -85,7 +84,6 @@ export namespace SUIApiRequest {
           description: nft.description,
           uri: nft.url,
           id: nft.objectId,
-          amount: "1",
           collection: "",
           metadata: {
             objectId: nft.objectId,

@@ -39,6 +39,7 @@ export class SUIAsset extends BaseProvider {
               assetId: c.object.type,
               name: c.symbol,
               symbol: c.symbol,
+              decimals: SUIUtil.BaseDecimals,
             } as AssetTypes.Asset)
         );
       }

@@ -1,3 +1,5 @@
+import { ProviderEnums } from "../enums";
+
 export const AptosCoinStore =
   "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
 export const AptosCoinSymbol = "APT";
@@ -13,3 +15,8 @@ export const BaseExpireTimestamp = 40; // second
 export const BaseDecimals = 8;
 export const BaseIconURL =
   "https://raw.githubusercontent.com/nixjs/aptos-wallet-icon/main/icons/aptos-logo.svg";
+export const BaseNodeInfo: Record<ProviderEnums.Network, string> = {
+  [ProviderEnums.Network.MAIN_NET]: "https://fullnode.mainnet.aptoslabs.com",
+  [ProviderEnums.Network.TEST_NET]: "https://fullnode.testnet.aptoslabs.com",
+  [ProviderEnums.Network.DEV_NET]: "https://fullnode.devnet.aptoslabs.com",
+};

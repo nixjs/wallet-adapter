@@ -13,6 +13,8 @@ import {
   TokenTypes,
 } from "aptos";
 import { AptosApiRequest } from "./api";
+import { DefaultAsset, DefaultAssetBalance } from "./const";
+import { RawCoinInfo } from "./types";
 import { BaseProvider } from "../base";
 
 export class AptosAsset extends BaseProvider {
@@ -25,8 +27,18 @@ export class AptosAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.Asset[]> {
     try {
-      const assets: AssetTypes.Asset[] = [];
+      const assets: AssetTypes.Asset[] = [DefaultAsset];
       if (nodeURL && address) {
+        const rawAssetRes = await AptosApiRequest.getAssetListVerified(nodeURL);
+        const rawCoinInfo: Record<string, RawCoinInfo> = {};
+        if ([200, 201].includes(rawAssetRes.status) && rawAssetRes.data) {
+          for (let i = 0; i < rawAssetRes.data.length; i += 1) {
+            Object.assign(rawCoinInfo, {
+              [`0x1::coin::CoinStore<${rawAssetRes.data[i].token_type.type}>`]:
+                rawAssetRes.data[i],
+            });
+          }
+        }
         const resources =
           await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
             nodeURL,
@@ -78,15 +90,30 @@ export class AptosAsset extends BaseProvider {
                     const coinInfo = coinResourcesResponse.data.find((e) =>
                       e.type.includes(coinAddressType)
                     )?.data as {
-                      decimal: string;
+                      decimals: number;
                       name: string;
                       symbol: string;
                     };
                     if (coinInfo) {
+                      let coingeckoId = "";
+                      let logoUrl = "";
+                      if (
+                        Object.keys(rawCoinInfo).length > 0 &&
+                        rawCoinInfo[resource.type] &&
+                        Object.keys(rawCoinInfo[resource.type]).length > 0
+                      ) {
+                        const { coingecko_id, logo_url } =
+                          rawCoinInfo[resource.type];
+                        coingeckoId = coingecko_id;
+                        logoUrl = logo_url;
+                      }
                       const asset: AssetTypes.Asset = {
                         assetId: resource.type,
                         name: coinInfo.name,
                         symbol: coinInfo.symbol,
+                        decimals: coinInfo.decimals,
+                        logoUrl,
+                        coingeckoId,
                       };
                       assets.push(asset);
                     }
@@ -97,9 +124,9 @@ export class AptosAsset extends BaseProvider {
           }
         }
       }
-      return assets;
+      return Helper.reduceNativeCoin(assets, DefaultAsset.assetId);
     } catch (error) {
-      return [];
+      return [DefaultAsset];
     }
   }
 
@@ -108,7 +135,7 @@ export class AptosAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.AssetAmount[]> {
     try {
-      const balances: AssetTypes.AssetAmount[] = [];
+      const balances: AssetTypes.AssetAmount[] = [DefaultAssetBalance];
       if (nodeURL && address) {
         const resources =
           await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
@@ -138,7 +165,7 @@ export class AptosAsset extends BaseProvider {
       }
       return balances;
     } catch (error) {
-      return [];
+      return [DefaultAssetBalance];
     }
   }
 

@@ -13,6 +13,9 @@ export namespace AssetTypes {
     assetId: string;
     name: string;
     symbol: string;
+    decimals: number;
+    logoUrl: string;
+    coingeckoId?: string;
   }
   export interface AssetAmount {
     amount: string;

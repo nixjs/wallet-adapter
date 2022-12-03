@@ -1,5 +1,7 @@
-import { Helper } from "@nixjs23n6/utilities-adapter";
+import { Helper, AptosUtil } from "@nixjs23n6/utilities-adapter";
 import { Types as AptosTypes } from "aptos";
+import axios from "axios";
+import { RawCoinInfo } from "./types";
 
 export namespace AptosApiRequest {
   export function getCoinAddress(resource: string): string | undefined {
@@ -56,5 +58,23 @@ export namespace AptosApiRequest {
     });
 
     return items;
+  }
+
+  export function getAssetListVerified(nodeURL: string) {
+    // https://raw.githubusercontent.com/hippospace/aptos-coin-list/main/typescript/src/defaultList.testnet.json
+    // defaultList.mainnet.json
+    let path = "defaultList.json";
+    if (nodeURL === AptosUtil.BaseNodeInfo.mainnet) {
+      path = "defaultList.mainnet.json";
+    } else if (nodeURL === AptosUtil.BaseNodeInfo.testnet) {
+      path = "defaultList.testnet.json";
+    }
+    return axios
+      .get<RawCoinInfo[]>(
+        `https://raw.githubusercontent.com/hippospace/aptos-coin-list/main/typescript/src/${path}`,
+        {}
+      )
+      .then((response) => Promise.resolve(response))
+      .catch((error) => Promise.reject(error));
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@nixjs23n6/asset-adapter",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Assets",
   "sideEffects": false,
   "main": "lib/cjs/index.js",
@@ -46,12 +46,12 @@
   "peerDependencies": {
     "@mysten/sui.js": "^0.17.1",
     "@nixjs23n6/types": "^1.0.15",
-    "@nixjs23n6/utilities-adapter": "^1.1.6"
+    "@nixjs23n6/utilities-adapter": "^1.1.7"
   },
   "devDependencies": {
     "@mysten/sui.js": "^0.17.1",
     "@nixjs23n6/types": "^1.0.15",
-    "@nixjs23n6/utilities-adapter": "^1.1.6",
+    "@nixjs23n6/utilities-adapter": "^1.1.7",
     "@types/lodash-es": "^4.17.6",
     "lodash-es": "^4.17.21"
   }

@@ -2,10 +2,12 @@ import {
   ProviderEnums,
   AssetTypes,
   SUIUtil,
+  Helper,
 } from "@nixjs23n6/utilities-adapter";
 import { JsonRpcProvider, SuiMoveObject } from "@mysten/sui.js";
 import uniqBy from "lodash-es/uniqBy";
 import { SUIApiRequest } from "./api";
+import { DefaultAsset, DefaultAssetBalance } from "./const";
 import { BaseProvider } from "../base";
 
 export type CoinObject = {
@@ -27,7 +29,7 @@ export class SUIAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.Asset[]> {
     try {
-      let assets: AssetTypes.Asset[] = [];
+      let assets: AssetTypes.Asset[] = [DefaultAsset];
       const query = new JsonRpcProvider(nodeURL, {
         skipDataValidation: false,
       });
@@ -39,12 +41,14 @@ export class SUIAsset extends BaseProvider {
               assetId: c.object.type,
               name: c.symbol,
               symbol: c.symbol,
+              decimals: SUIUtil.BaseDecimals,
+              logoUrl: SUIUtil.BaseIconURL,
             } as AssetTypes.Asset)
         );
       }
-      return assets;
+      return Helper.reduceNativeCoin(assets, DefaultAsset.assetId);
     } catch (error) {
-      return [];
+      return [DefaultAsset];
     }
   }
 
@@ -53,14 +57,14 @@ export class SUIAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.AssetAmount[]> {
     try {
-      const balances: AssetTypes.AssetAmount[] = [];
+      const balances: AssetTypes.AssetAmount[] = [DefaultAssetBalance];
       if (nodeURL && address) {
         const balances = await SUIApiRequest.getCoinsBalance(nodeURL, address);
         return balances;
       }
       return balances;
     } catch (error) {
-      return [];
+      return [DefaultAssetBalance];
     }
   }
 

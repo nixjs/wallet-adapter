@@ -13,7 +13,6 @@ export namespace AssetTypes {
     assetId: string;
     name: string;
     symbol: string;
-    decimals: number;
   }
   export interface AssetAmount {
     amount: string;

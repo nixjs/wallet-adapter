@@ -87,7 +87,6 @@ export class AptosAsset extends BaseProvider {
                         assetId: resource.type,
                         name: coinInfo.name,
                         symbol: coinInfo.symbol,
-                        decimals: AptosUtil.BaseDecimals,
                       };
                       assets.push(asset);
                     }

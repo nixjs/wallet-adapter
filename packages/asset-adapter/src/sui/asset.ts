@@ -1,4 +1,8 @@
-import { ProviderEnums, AssetTypes } from "@nixjs23n6/utilities-adapter";
+import {
+  ProviderEnums,
+  AssetTypes,
+  SUIUtil,
+} from "@nixjs23n6/utilities-adapter";
 import { JsonRpcProvider, SuiMoveObject } from "@mysten/sui.js";
 import uniqBy from "lodash-es/uniqBy";
 import { SUIApiRequest } from "./api";
@@ -13,7 +17,7 @@ export type CoinObject = {
 
 export type GetOwnedObjParams = { network: any; address: string };
 
-export class AptosAsset extends BaseProvider {
+export class SUIAsset extends BaseProvider {
   public get type(): ProviderEnums.Provider {
     return ProviderEnums.Provider.SUI;
   }
@@ -70,5 +74,13 @@ export class AptosAsset extends BaseProvider {
     } catch (error) {
       return [];
     }
+  }
+  getNativeCoinInfo(): AssetTypes.NativeCoin {
+    return {
+      decimals: SUIUtil.BaseDecimals,
+      url: SUIUtil.BaseIconURL,
+      name: "SUI",
+      symbol: "SUI",
+    };
   }
 }

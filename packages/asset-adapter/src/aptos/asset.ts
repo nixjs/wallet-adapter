@@ -12,68 +12,13 @@ import {
   Types as AptosTypes,
   TokenTypes,
 } from "aptos";
+import { AptosApiRequest } from "./api";
 import { BaseProvider } from "../base";
 
 export class AptosAsset extends BaseProvider {
   public get type(): ProviderEnums.Provider {
     return ProviderEnums.Provider.APTOS;
   }
-
-  getCoinAddress(resource: string): string | undefined {
-    try {
-      const coinPart = /<.*>/g.exec(resource);
-      if (coinPart) {
-        const addressPart = /[0-9]x[a-z0-9A-Z]{1,}/g.exec(coinPart[0]);
-        if (addressPart) {
-          return addressPart[0];
-        }
-      }
-      throw Error("Failed to get coin type.");
-    } catch (_e) {
-      return undefined;
-    }
-  }
-
-  getCoinAddressType(resource: string): string | undefined {
-    try {
-      const coinPart = /<.*>/g.exec(resource);
-      if (coinPart) return coinPart[0].substring(1).slice(0, -1);
-      throw Error("Failed to get coin type.");
-    } catch (_e) {
-      return undefined;
-    }
-  }
-
-  getNFTsFromEvent = (
-    depositEvents: (AptosTypes.Event & { version: string })[],
-    withdrawEvents: (AptosTypes.Event & { version: string })[]
-  ) => {
-    const b1 = depositEvents.map((a) => ({
-      ...a,
-      creator: a.data?.id?.token_data_id?.name,
-    }));
-    const b2 = withdrawEvents.map((a) => ({
-      ...a,
-      creator: a.data?.id?.token_data_id?.name,
-    }));
-
-    // group events by creator
-    const ourMapping = Helper.groupBy([...b1, ...b2], (e) => e.creator);
-    // delete event has even data
-    const items: any[] = [];
-    Object.keys(ourMapping).forEach((key) => {
-      const el = ourMapping[key];
-      if (el.length % 2 !== 0) {
-        items.push(
-          el.sort(
-            (o1: any, o2: any) => Number(o2.version) - Number(o1.version)
-          )[0]
-        );
-      }
-    });
-
-    return items;
-  };
 
   async getAssets(
     nodeURL: string,
@@ -96,7 +41,7 @@ export class AptosAsset extends BaseProvider {
           const ourResources = resources.data
             .map((d) => ({
               ...d,
-              address: this.getCoinAddress(d.type) || "",
+              address: AptosApiRequest.getCoinAddress(d.type) || "",
             }))
             .filter(
               (n) =>
@@ -126,9 +71,9 @@ export class AptosAsset extends BaseProvider {
                 for (let j = 0; j < ourResourcesFromGroup.length; j++) {
                   const resource = ourResourcesFromGroup[j];
                   const coinAddress: Types.Undefined<string> =
-                    await this.getCoinAddress(resource.type);
+                    await AptosApiRequest.getCoinAddress(resource.type);
                   const coinAddressType: Types.Undefined<string> =
-                    await this.getCoinAddressType(resource.type);
+                    await AptosApiRequest.getCoinAddressType(resource.type);
                   if (coinAddress && coinAddressType) {
                     const coinInfo = coinResourcesResponse.data.find((e) =>
                       e.type.includes(coinAddressType)
@@ -226,7 +171,7 @@ export class AptosAsset extends BaseProvider {
               address,
               AptosUtil.AptosTokenStore,
               AptosUtil.AptosEnums.TxEvent.DEPOSIT_EVENT,
-              200,
+              1000,
               0
             );
             const withdEvents: Interfaces.ResponseData<
@@ -236,7 +181,7 @@ export class AptosAsset extends BaseProvider {
               address,
               AptosUtil.AptosTokenStore,
               AptosUtil.AptosEnums.TxEvent.WITHDRAW_EVENT,
-              200,
+              1000,
               0
             );
             const aptosClient = new AptosClient(nodeURL);
@@ -247,7 +192,7 @@ export class AptosAsset extends BaseProvider {
               withdEvents.status === "SUCCESS" &&
               withdEvents.data
             ) {
-              const events = this.getNFTsFromEvent(
+              const events = AptosApiRequest.getNFTsFromEvent(
                 depEvents.data,
                 withdEvents.data
               );
@@ -279,5 +224,13 @@ export class AptosAsset extends BaseProvider {
     } catch (error) {
       return [];
     }
+  }
+  getNativeCoinInfo(): AssetTypes.NativeCoin {
+    return {
+      decimals: AptosUtil.BaseDecimals,
+      url: AptosUtil.BaseIconURL,
+      name: "Aptos",
+      symbol: "APT",
+    };
   }
 }

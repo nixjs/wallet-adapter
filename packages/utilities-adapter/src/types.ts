@@ -2,6 +2,12 @@ import { Types } from "@nixjs23n6/types";
 import { TransactionEnums } from "./enums";
 
 export namespace AssetTypes {
+  export interface NativeCoin {
+    decimals: number;
+    url: string;
+    symbol: string;
+    name: string;
+  }
   export interface Asset {
     // 0x1::coin::CoinStore<0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeCoin::ANI> or smart contract address
     assetId: string;

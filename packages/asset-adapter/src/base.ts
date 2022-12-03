@@ -10,4 +10,5 @@ export abstract class BaseProvider {
     address: string
   ): Promise<AssetTypes.AssetAmount[]>;
   abstract getNFTs(nodeURL: string, address: string): Promise<AssetTypes.NFT[]>;
+  abstract getNativeCoinInfo(): AssetTypes.NativeCoin;
 }

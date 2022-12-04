@@ -47,7 +47,7 @@ export class SUIAsset extends BaseProvider {
             } as AssetTypes.Asset)
         );
       }
-      return Helper.reduceNativeCoin(assets, DefaultAsset.assetId);
+      return Helper.reduceNativeCoin(assets, SUIUtil.SUICoinStore);
     } catch (error) {
       return [DefaultAsset];
     }

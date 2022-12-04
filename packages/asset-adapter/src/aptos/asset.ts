@@ -125,7 +125,7 @@ export class AptosAsset extends BaseProvider {
           }
         }
       }
-      return Helper.reduceNativeCoin(assets, DefaultAsset.assetId);
+      return Helper.reduceNativeCoin(assets, AptosUtil.AptosCoinStore);
     } catch (error) {
       return [DefaultAsset];
     }

@@ -29,7 +29,7 @@ export class SUIAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.Asset[]> {
     try {
-      let assets: AssetTypes.Asset[] = [DefaultAsset];
+      let assets: AssetTypes.Asset[] = [];
       const query = new JsonRpcProvider(nodeURL, {
         skipDataValidation: false,
       });
@@ -46,7 +46,7 @@ export class SUIAsset extends BaseProvider {
               isNative: c.object.type === SUIUtil.SUICoinStore,
             } as AssetTypes.Asset)
         );
-      }
+      } else assets = [DefaultAsset];
       return Helper.reduceNativeCoin(assets, SUIUtil.SUICoinStore);
     } catch (error) {
       return [DefaultAsset];
@@ -58,11 +58,10 @@ export class SUIAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.AssetAmount[]> {
     try {
-      const balances: AssetTypes.AssetAmount[] = [DefaultAssetBalance];
+      let balances: AssetTypes.AssetAmount[] = [];
       if (nodeURL && address) {
-        const balances = await SUIApiRequest.getCoinsBalance(nodeURL, address);
-        return balances;
-      }
+        balances = await SUIApiRequest.getCoinsBalance(nodeURL, address);
+      } else balances = [DefaultAssetBalance];
       return balances;
     } catch (error) {
       return [DefaultAssetBalance];

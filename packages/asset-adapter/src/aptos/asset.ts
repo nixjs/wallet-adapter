@@ -27,7 +27,7 @@ export class AptosAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.Asset[]> {
     try {
-      const assets: AssetTypes.Asset[] = [DefaultAsset];
+      let assets: AssetTypes.Asset[] = [];
       if (nodeURL && address) {
         const rawAssetRes = await AptosApiRequest.getAssetListVerified(nodeURL);
         const rawCoinInfo: Record<string, RawCoinInfo> = {};
@@ -124,7 +124,7 @@ export class AptosAsset extends BaseProvider {
             }
           }
         }
-      }
+      } else assets = [DefaultAsset];
       return Helper.reduceNativeCoin(assets, AptosUtil.AptosCoinStore);
     } catch (error) {
       return [DefaultAsset];
@@ -136,7 +136,7 @@ export class AptosAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.AssetAmount[]> {
     try {
-      const balances: AssetTypes.AssetAmount[] = [DefaultAssetBalance];
+      const balances: AssetTypes.AssetAmount[] = [];
       if (nodeURL && address) {
         const resources =
           await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
@@ -163,7 +163,7 @@ export class AptosAsset extends BaseProvider {
             } as AssetTypes.AssetAmount);
           }
         }
-      }
+      } else [DefaultAssetBalance];
       return balances;
     } catch (error) {
       return [DefaultAssetBalance];

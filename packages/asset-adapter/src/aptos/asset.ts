@@ -270,4 +270,25 @@ export class AptosAsset extends BaseProvider {
       symbol: "APT",
     };
   }
+  async getAssetVerified(nodeURL: string): Promise<AssetTypes.Asset[]> {
+    const rawAssetRes = await AptosApiRequest.getAssetListVerified(nodeURL);
+    if ([200, 201].includes(rawAssetRes.status) && rawAssetRes.data) {
+      const assets = rawAssetRes.data;
+      return assets.map(
+        (a) =>
+          ({
+            assetId: `0x1::coin::CoinStore<${a.token_type.type}>`,
+            decimals: a.decimals,
+            name: a.name,
+            symbol: a.symbol,
+            logoUrl: a.logo_url,
+            isNative:
+              `0x1::coin::CoinStore<${a.token_type.type}>` ===
+              AptosUtil.AptosCoinStore,
+            coingeckoId: a.coingecko_id,
+          } as AssetTypes.Asset)
+      );
+    }
+    return [];
+  }
 }

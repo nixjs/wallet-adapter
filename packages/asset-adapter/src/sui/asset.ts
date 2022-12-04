@@ -88,4 +88,7 @@ export class SUIAsset extends BaseProvider {
       symbol: "SUI",
     };
   }
+  async getAssetVerified(nodeURL: string): Promise<AssetTypes.Asset[]> {
+    return [];
+  }
 }

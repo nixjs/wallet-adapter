@@ -65,6 +65,27 @@ export namespace TransactionTypes {
   export type ScriptObject = {
     [data: string]: any;
   };
+
+  export interface TransferRequest {
+    amount: string;
+    assetId: string;
+    from: VaultTypes.AccountObject;
+    to: string;
+    chainId: string;
+    gasLimit?: string;
+    gasPrice?: string;
+  }
+  export interface RawTransferTransaction<T = any> {
+    amount: string;
+    assetId: string;
+    toAddress: string;
+    gasLimit: string;
+    gasPrice: string;
+    chainId: string;
+    gasUsed: string;
+    expirationTimestamp?: number;
+    rawData: T;
+  }
 }
 export namespace VaultTypes {
   export interface AccountObject {

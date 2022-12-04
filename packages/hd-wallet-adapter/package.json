@@ -54,7 +54,7 @@
   "peerDependencies": {
     "@nixjs23n6/objectify": ">=0.0.1",
     "@nixjs23n6/types": "^1.0.15",
-    "@nixjs23n6/utilities-adapter": "^1.1.10",
+    "@nixjs23n6/utilities-adapter": "^1.1.11",
     "lodash-es": "^4.17.21"
   },
   "devDependencies": {

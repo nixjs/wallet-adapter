@@ -4,7 +4,7 @@ export const DefaultAsset: AssetTypes.Asset = {
   assetId: SUIUtil.SUICoinStore,
   name: "SUI",
   symbol: "SUI",
-  decimals: 10,
+  decimals: 9,
   logoUrl: SUIUtil.BaseIconURL,
   isNative: true,
 };

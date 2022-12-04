@@ -33,7 +33,7 @@ export namespace SUIApiRequest {
     const effects = await query.getTransactionWithEffectsBatch(digests);
     const results = [];
 
-    const limit = RateLimit(5); // rps
+    const limit = RateLimit(8); // rps
     for (const effect of effects) {
       const data = getTransactionData(effect.certificate);
       await limit();

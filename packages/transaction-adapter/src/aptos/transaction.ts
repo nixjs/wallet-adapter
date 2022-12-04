@@ -41,7 +41,7 @@ export class AptosTransaction extends BaseProvider {
       let accounts: TransactionTypes.Transaction[] = [];
       let deposits: TransactionTypes.Transaction[] = [];
       let withdraws: TransactionTypes.Transaction[] = [];
-      const limit = RateLimit(5); // rps
+
       if (nodeURL && address) {
         const resources =
           await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
@@ -63,14 +63,14 @@ export class AptosTransaction extends BaseProvider {
                 n.type.includes(AptosUtil.BaseCoinStore) ||
                 n.type.includes(AptosUtil.AptosTokenStore)
             );
-
+          const limit = RateLimit(8); // rps
           if (ourResources.length > 0) {
             for (let r = 0; r < ourResources.length; r++) {
-              await limit();
               const target = ourResources[r];
               const { deposit_events, withdraw_events } = target.data as any;
               const coinType = target.type;
               if (coinType) {
+                await limit();
                 if (Number(withdraw_events?.counter) > 0) {
                   const withdrawEvents: Interfaces.ResponseData<
                     (AptosTypes.Event & { version: string })[]

@@ -63,11 +63,12 @@ export class AptosAsset extends BaseProvider {
 
           const groupAddress = Helper.groupBy(ourResources, (d) => d.address);
           const newResourceByAddress = Object.keys(groupAddress);
-          const limit = RateLimit(5);
+          const limit = RateLimit(8);
           for (let i = 0; i < newResourceByAddress.length; i++) {
             const address = newResourceByAddress[i];
-            await limit;
+
             if (address && address.length > 0) {
+              await limit();
               const coinResourcesResponse: Interfaces.ResponseData<
                 AptosTypes.MoveResource[]
               > = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
@@ -80,8 +81,10 @@ export class AptosAsset extends BaseProvider {
                 coinResourcesResponse.data
               ) {
                 const ourResourcesFromGroup = groupAddress[address];
+                const limit2 = RateLimit(8);
                 for (let j = 0; j < ourResourcesFromGroup.length; j++) {
                   const resource = ourResourcesFromGroup[j];
+                  await limit2();
                   const coinAddress: Types.Undefined<string> =
                     await AptosApiRequest.getCoinAddress(resource.type);
                   const coinAddressType: Types.Undefined<string> =
@@ -127,6 +130,7 @@ export class AptosAsset extends BaseProvider {
       } else assets = [DefaultAsset];
       return Helper.reduceNativeCoin(assets, AptosUtil.AptosCoinStore);
     } catch (error) {
+      console.log("[getAssets]", error);
       return [DefaultAsset];
     }
   }
@@ -166,6 +170,7 @@ export class AptosAsset extends BaseProvider {
       } else [DefaultAssetBalance];
       return balances;
     } catch (error) {
+      console.log("[getAssetBalances]", error);
       return [DefaultAssetBalance];
     }
   }
@@ -224,9 +229,11 @@ export class AptosAsset extends BaseProvider {
                 depEvents.data,
                 withdEvents.data
               );
+              const limit = RateLimit(8);
               for (let i = 0; i < events.length; i++) {
                 const element = events[i];
                 const data = element.data.id.token_data_id;
+                await limit();
                 const tokenData: TokenTypes.TokenData =
                   await tokenClient.getTokenData(
                     data.creator,
@@ -250,6 +257,7 @@ export class AptosAsset extends BaseProvider {
       }
       return NFTs;
     } catch (error) {
+      console.log("[getNFTs]", error);
       return [];
     }
   }

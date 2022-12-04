@@ -20,3 +20,8 @@ export const BaseNodeInfo: Record<ProviderEnums.Network, string> = {
   [ProviderEnums.Network.TEST_NET]: "https://fullnode.testnet.aptoslabs.com",
   [ProviderEnums.Network.DEV_NET]: "https://fullnode.devnet.aptoslabs.com",
 };
+export const BaseNodeByChainInfo: Record<number, string> = {
+  1: "https://fullnode.mainnet.aptoslabs.com",
+  2: "https://fullnode.testnet.aptoslabs.com",
+  38: "https://fullnode.devnet.aptoslabs.com",
+};

@@ -43,6 +43,7 @@ export class SUIAsset extends BaseProvider {
               symbol: c.symbol,
               decimals: SUIUtil.BaseDecimals,
               logoUrl: SUIUtil.BaseIconURL,
+              isNative: c.object.type === SUIUtil.SUICoinStore,
             } as AssetTypes.Asset)
         );
       }
@@ -81,6 +82,7 @@ export class SUIAsset extends BaseProvider {
   }
   getNativeCoinInfo(): AssetTypes.NativeCoin {
     return {
+      assetId: SUIUtil.SUICoinStore,
       decimals: SUIUtil.BaseDecimals,
       url: SUIUtil.BaseIconURL,
       name: "SUI",

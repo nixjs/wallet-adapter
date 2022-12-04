@@ -1,14 +1,15 @@
 import { AssetTypes, AptosUtil } from "@nixjs23n6/utilities-adapter";
 
 export const DefaultAsset: AssetTypes.Asset = {
-  assetId: "0x1::aptos_coin::AptosCoin",
+  assetId: AptosUtil.AptosCoinStore,
   name: "Aptos",
   symbol: "APT",
   decimals: 8,
   logoUrl: AptosUtil.BaseIconURL,
   coingeckoId: "aptos",
+  isNative: true,
 };
 export const DefaultAssetBalance: AssetTypes.AssetAmount = {
-  assetId: "0x1::aptos_coin::AptosCoin",
+  assetId: AptosUtil.AptosCoinStore,
   amount: "0",
 };

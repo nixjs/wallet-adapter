@@ -114,6 +114,7 @@ export class AptosAsset extends BaseProvider {
                         decimals: coinInfo.decimals,
                         logoUrl,
                         coingeckoId,
+                        isNative: resource.type === AptosUtil.AptosCoinStore,
                       };
                       assets.push(asset);
                     }
@@ -254,6 +255,7 @@ export class AptosAsset extends BaseProvider {
   }
   getNativeCoinInfo(): AssetTypes.NativeCoin {
     return {
+      assetId: AptosUtil.AptosCoinStore,
       decimals: AptosUtil.BaseDecimals,
       url: AptosUtil.BaseIconURL,
       name: "Aptos",

@@ -3,6 +3,7 @@ import { TransactionEnums } from "./enums";
 
 export namespace AssetTypes {
   export interface NativeCoin {
+    assetId: string;
     decimals: number;
     url: string;
     symbol: string;
@@ -16,6 +17,7 @@ export namespace AssetTypes {
     decimals: number;
     logoUrl: string;
     coingeckoId?: string;
+    isNative: boolean;
   }
   export interface AssetAmount {
     amount: string;

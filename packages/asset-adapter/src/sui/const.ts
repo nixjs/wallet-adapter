@@ -1,13 +1,14 @@
 import { AssetTypes, SUIUtil } from "@nixjs23n6/utilities-adapter";
 
 export const DefaultAsset: AssetTypes.Asset = {
-  assetId: "0x2::coin::Coin<0x2::sui::SUI>",
+  assetId: SUIUtil.SUICoinStore,
   name: "SUI",
   symbol: "SUI",
   decimals: 10,
   logoUrl: SUIUtil.BaseIconURL,
+  isNative: true,
 };
 export const DefaultAssetBalance: AssetTypes.AssetAmount = {
-  assetId: "0x2::coin::Coin<0x2::sui::SUI>",
+  assetId: SUIUtil.SUICoinStore,
   amount: "0",
 };

@@ -1,4 +1,5 @@
 import { Types } from "@nixjs23n6/types";
+import { HexString } from "./HexString";
 import { TransactionEnums } from "./enums";
 
 export namespace AssetTypes {
@@ -37,6 +38,21 @@ export namespace AssetTypes {
   }
 }
 export namespace TransactionTypes {
+  export type UnsignedTx = {
+    data: HexString;
+  };
+
+  export type SignedTx = {
+    signature: HexString;
+    publicKey: HexString;
+    data: HexString;
+  };
+
+  export type SignedMessage = {
+    signature: HexString;
+    publicKey: HexString;
+  };
+
   export interface Transaction {
     from: string;
     to: string;
@@ -77,14 +93,15 @@ export namespace TransactionTypes {
   }
   export interface RawTransferTransaction<T = any> {
     amount: string;
-    assetId: string;
-    toAddress: string;
-    gasLimit: string;
-    gasPrice: string;
+    asset: AssetTypes.Asset;
+    from: VaultTypes.AccountObject;
+    to: string;
     chainId: string;
     gasUsed: string;
-    expirationTimestamp?: number;
-    rawData: T;
+    rawData?: T;
+    gasLimit?: string;
+    gasPrice?: string;
+    expirationTimestamp?: string;
   }
 }
 export namespace VaultTypes {

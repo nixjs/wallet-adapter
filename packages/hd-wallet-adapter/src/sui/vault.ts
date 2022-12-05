@@ -6,6 +6,7 @@ import {
   VaultTypes,
   ProviderEnums,
   SUIUtil,
+  TransactionTypes,
 } from "@nixjs23n6/utilities-adapter";
 import { Crypto } from "../vault/crypto";
 import { BaseProvider } from "../vault/base";
@@ -91,5 +92,19 @@ export class SUIVault extends BaseProvider {
       HexString.fromBuffer(buffer).toString()
     );
     return signature;
+  }
+
+  async signTransaction(
+    unsigned: TransactionTypes.UnsignedTx
+  ): Promise<TransactionTypes.SignedTx> {
+    const signature = await this.hdKey.signBuffer(
+      Buffer.from(unsigned.data.hex())
+    );
+    const publicKey = await this.hdKey.getPublicKey();
+    return {
+      data: unsigned.data,
+      signature,
+      publicKey: HexString.fromUint8Array(publicKey),
+    };
   }
 }

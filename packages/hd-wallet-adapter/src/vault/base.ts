@@ -1,4 +1,8 @@
-import { HexString, VaultTypes } from "@nixjs23n6/utilities-adapter";
+import {
+  HexString,
+  VaultTypes,
+  TransactionTypes,
+} from "@nixjs23n6/utilities-adapter";
 
 export abstract class BaseProvider {
   abstract getAccountFromMnemonic(
@@ -30,4 +34,13 @@ export abstract class BaseProvider {
    * @returns A signature HexString
    */
   abstract signMessage(message: Uint8Array | string): Promise<HexString>;
+
+  /**
+   * Signs specified `hexString` with account's private key
+   * @param hexString A regular string or Uint8Array to sign
+   * @returns A signature HexString
+   */
+  abstract signTransaction(
+    unsigned: TransactionTypes.UnsignedTx
+  ): Promise<TransactionTypes.SignedTx>;
 }

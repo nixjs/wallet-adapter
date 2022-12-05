@@ -1,4 +1,10 @@
-import { TransactionTypes, ProviderEnums } from "@nixjs23n6/utilities-adapter";
+import { Types } from "@nixjs23n6/types";
+import {
+  TransactionTypes,
+  ProviderEnums,
+  AssetTypes,
+  VaultTypes,
+} from "@nixjs23n6/utilities-adapter";
 
 export abstract class BaseProvider {
   abstract getTransactions(
@@ -17,4 +23,13 @@ export abstract class BaseProvider {
     address: string,
     type: ProviderEnums.Network
   ): string;
+  abstract transferCoin(
+    amount: string,
+    asset: AssetTypes.Asset,
+    from: VaultTypes.AccountObject,
+    to: string,
+    chainId: string,
+    gasLimit?: string,
+    gasPrice?: string
+  ): Promise<Types.Nullable<TransactionTypes.RawTransferTransaction>>;
 }

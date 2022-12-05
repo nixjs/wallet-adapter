@@ -5,8 +5,17 @@ import {
   AptosUtil,
   ProviderEnums,
   BaseConst,
+  AssetTypes,
+  VaultTypes,
+  Helper,
+  HexString,
 } from "@nixjs23n6/utilities-adapter";
-import { Types as AptosTypes } from "aptos";
+import {
+  AptosClient,
+  AptosAccount,
+  TxnBuilderTypes,
+  Types as AptosTypes,
+} from "aptos";
 import { RateLimit } from "async-sema";
 import { uniqBy } from "lodash-es";
 import { BaseProvider } from "../base";
@@ -29,6 +38,16 @@ export class AptosTransaction extends BaseProvider {
     } catch (_e) {
       return undefined;
     }
+  }
+
+  getCoinExactName(resource: string | undefined): string | undefined {
+    if (resource) {
+      const coinPart = /<.*>/g.exec(resource);
+      if (coinPart) {
+        return coinPart[0].replace("<", "").replace(">", "");
+      }
+    }
+    return undefined;
   }
 
   async getTransactions(
@@ -414,11 +433,102 @@ export class AptosTransaction extends BaseProvider {
   ): string {
     return `${explorerURL}/account/${address}?network=${type}`;
   }
+
   getTransactionExplorer(
     explorerURL: string,
     hash: string,
     type: ProviderEnums.Network
   ): string {
     return `${explorerURL}/txn/${hash}?network=${type}`;
+  }
+
+  async transferCoin(
+    amount: string,
+    asset: AssetTypes.Asset,
+    from: VaultTypes.AccountObject,
+    to: string,
+    chainId: string,
+    gasLimit?: string,
+    gasPrice?: string
+  ): Promise<Types.Nullable<TransactionTypes.RawTransferTransaction>> {
+    try {
+      let result: Types.Nullable<TransactionTypes.RawTransferTransaction> =
+        null;
+      const nodeURL = AptosUtil.BaseNodeByChainInfo[Number(chainId)];
+      const client = new AptosClient(nodeURL);
+      const { assetId, decimals } = asset;
+
+      const fromPrivateKey = new HexString(from.privateKeyHex);
+      const owner = new AptosAccount(fromPrivateKey.toUint8Array());
+
+      const exactTokenName = this.getCoinExactName(assetId);
+
+      if (!exactTokenName) throw new Error("Coin exact name undefined");
+
+      let transferPayload: Types.Nullable<TxnBuilderTypes.TransactionPayloadEntryFunction> =
+        null;
+
+      const ourAmount = Number(
+        Helper.Decimal.toDecimal(String(amount), decimals)
+      );
+
+      const receiverResourcesResponse: Interfaces.ResponseData<
+        AptosTypes.MoveResource[]
+      > = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, to);
+      if (receiverResourcesResponse.status === "SUCCESS") {
+        transferPayload = await AptosUtil.AptosApiRequest.transferCoinPayload(
+          to,
+          ourAmount,
+          exactTokenName
+        );
+      } else if (
+        receiverResourcesResponse.status === "ERROR" &&
+        (receiverResourcesResponse.error as any)?.data?.error_code ===
+          "account_not_found"
+      ) {
+        transferPayload =
+          await AptosUtil.AptosApiRequest.AptosAccountTransferPayload(
+            to,
+            ourAmount
+          );
+      }
+
+      if (transferPayload) {
+        const rawTxn: TxnBuilderTypes.RawTransaction =
+          await AptosUtil.AptosApiRequest.createRawTransaction(
+            client,
+            owner,
+            transferPayload,
+            BigInt(gasPrice || AptosUtil.BaseGasPrice),
+            BigInt(AptosUtil.BaseMaxGasAmount),
+            AptosUtil.BaseExpireTimestamp
+          );
+        const simulateTxn: AptosTypes.UserTransaction[] =
+          await AptosUtil.AptosApiRequest.simulateTransaction(
+            client,
+            owner,
+            rawTxn
+          );
+        if (simulateTxn && simulateTxn.length > 0) {
+          const { gas_used, expiration_timestamp_secs } = simulateTxn[0];
+          result = {
+            amount,
+            asset,
+            from,
+            to,
+            chainId,
+            gasLimit,
+            gasPrice,
+            gasUsed: gas_used,
+            expirationTimestamp: expiration_timestamp_secs,
+            rawData: simulateTxn[0],
+          };
+        }
+      }
+      return result;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 }

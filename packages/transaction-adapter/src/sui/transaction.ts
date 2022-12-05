@@ -72,4 +72,16 @@ export class SUITransaction extends BaseProvider {
       return null;
     }
   }
+
+  async estimateGasUnitPrice(
+    chainId: string | number
+  ): Promise<Types.Undefined<string>> {
+    try {
+      if (!SUIUtil.BaseNodeByChainInfo[Number(chainId)])
+        throw new Error("The chain id not found.");
+      return "0";
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }

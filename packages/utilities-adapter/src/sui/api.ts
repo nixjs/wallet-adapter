@@ -15,6 +15,9 @@ import { TransactionTypes } from "../types";
 import { TransactionEnums } from "../enums";
 
 export namespace SUIApiRequest {
+  // export async function fetchEstimateApi() {
+
+  // }
   export async function getTransactionsForAddress(
     nodeURL: string,
     address: string

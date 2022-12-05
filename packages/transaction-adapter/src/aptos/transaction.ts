@@ -531,4 +531,23 @@ export class AptosTransaction extends BaseProvider {
       return null;
     }
   }
+
+  async estimateGasUnitPrice(
+    chainId: string | number
+  ): Promise<Types.Undefined<string>> {
+    try {
+      if (!AptosUtil.BaseNodeByChainInfo[Number(chainId)])
+        throw new Error("The chain id not found.");
+      const res = await AptosUtil.AptosApiRequest.fetchEstimateApi(
+        AptosUtil.BaseNodeByChainInfo[Number(chainId)]
+      );
+      if (res.status === "SUCCESS" && res.data?.gas_estimate) {
+        return String(res.data.gas_estimate);
+      } else {
+        throw new Error("The gas price not found");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }

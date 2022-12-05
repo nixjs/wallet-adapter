@@ -3,11 +3,9 @@ import { Interfaces } from "@nixjs23n6/types";
 import {
   AptosClient,
   AptosAccount,
-  FaucetClient,
   Types as AptosTypes,
   TxnBuilderTypes,
   BCS,
-  HexString,
 } from "aptos";
 import { AptosEnums } from "./enums";
 import { AptosCoinStore, BaseMaxGasAmount, BaseExpireTimestamp } from "./const";

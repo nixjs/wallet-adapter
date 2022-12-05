@@ -23,6 +23,9 @@ export abstract class BaseProvider {
     address: string,
     type: ProviderEnums.Network
   ): string;
+  abstract estimateGasUnitPrice(
+    chainId: string | number
+  ): Promise<Types.Undefined<string>>;
   abstract transferCoin(
     amount: string,
     asset: AssetTypes.Asset,

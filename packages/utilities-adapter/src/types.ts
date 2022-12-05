@@ -38,6 +38,16 @@ export namespace AssetTypes {
   }
 }
 export namespace TransactionTypes {
+  export interface Network {
+    chainID: string;
+    name: string;
+    nodeURL: string;
+    faucetURL: string;
+    explorerURL: string;
+    nativeToken: string;
+    type: "testnet" | "mainnet" | "devnet";
+  }
+
   export type UnsignedTx = {
     data: HexString;
   };

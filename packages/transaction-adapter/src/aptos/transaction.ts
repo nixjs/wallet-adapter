@@ -500,7 +500,7 @@ export class AptosTransaction extends BaseProvider {
             owner,
             transferPayload,
             BigInt(gasPrice || AptosUtil.BaseGasPrice),
-            BigInt(AptosUtil.BaseMaxGasAmount),
+            BigInt(gasLimit || AptosUtil.BaseMaxGasAmount),
             AptosUtil.BaseExpireTimestamp
           );
         const simulateTxn: AptosTypes.UserTransaction[] =

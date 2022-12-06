@@ -64,7 +64,7 @@ export class SUITransaction extends BaseProvider {
         chainId,
         gasLimit,
         gasPrice,
-        gasUsed: "1",
+        transactionFee: "1",
         expirationTimestamp: "1000000",
       };
       return result;

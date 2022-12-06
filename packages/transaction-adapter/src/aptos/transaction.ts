@@ -519,7 +519,7 @@ export class AptosTransaction extends BaseProvider {
             chainId,
             gasLimit,
             gasPrice,
-            gasUsed: gas_used,
+            transactionFee: gas_used,
             expirationTimestamp: expiration_timestamp_secs,
             rawData: simulateTxn[0],
           };

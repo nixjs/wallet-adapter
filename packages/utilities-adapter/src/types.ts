@@ -107,7 +107,7 @@ export namespace TransactionTypes {
     from: VaultTypes.AccountObject;
     to: string;
     chainId: string;
-    gasUsed: string;
+    transactionFee: string;
     rawData?: T;
     gasLimit?: string;
     gasPrice?: string;

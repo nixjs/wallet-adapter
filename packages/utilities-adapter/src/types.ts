@@ -48,11 +48,15 @@ export namespace TransactionTypes {
     type: "testnet" | "mainnet" | "devnet";
   }
 
-  export type UnsignedTx = {
+  export type RawTxSigning = {
+    data: any;
+  };
+
+  export type UnsignedTransaction = {
     data: HexString;
   };
 
-  export type SignedTx = {
+  export type SignedTransaction = {
     signature: HexString;
     publicKey: HexString;
     data: HexString;

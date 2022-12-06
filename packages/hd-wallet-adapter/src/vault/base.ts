@@ -41,6 +41,6 @@ export abstract class BaseProvider {
    * @returns A signature HexString
    */
   abstract signTransaction(
-    unsigned: TransactionTypes.UnsignedTx
-  ): Promise<TransactionTypes.SignedTx>;
+    unsigned: TransactionTypes.UnsignedTransaction
+  ): Promise<TransactionTypes.SignedTransaction>;
 }

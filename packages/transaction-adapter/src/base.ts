@@ -25,7 +25,7 @@ export abstract class BaseProvider {
   ): string;
   abstract estimateGasUnitPrice(
     chainId: string | number
-  ): Promise<Types.Undefined<string>>;
+  ): Promise<Types.Nullable<string>>;
   abstract transferCoin(
     amount: string,
     asset: AssetTypes.Asset,
@@ -35,4 +35,5 @@ export abstract class BaseProvider {
     gasLimit?: string,
     gasPrice?: string
   ): Promise<Types.Nullable<TransactionTypes.RawTransferTransaction>>;
+  // abstract executeTransaction(): Promise<Types.>
 }

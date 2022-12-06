@@ -107,8 +107,8 @@ export class AptosVault extends BaseProvider {
   }
 
   async signTransaction(
-    unsigned: TransactionTypes.UnsignedTx
-  ): Promise<TransactionTypes.SignedTx> {
+    unsigned: TransactionTypes.UnsignedTransaction
+  ): Promise<TransactionTypes.SignedTransaction> {
     const signature = await this.hdKey.signBuffer(
       Buffer.from(unsigned.data.hex())
     );

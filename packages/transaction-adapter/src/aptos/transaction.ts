@@ -521,7 +521,7 @@ export class AptosTransaction extends BaseProvider {
             gasPrice,
             transactionFee: gas_used,
             expirationTimestamp: expiration_timestamp_secs,
-            rawData: simulateTxn[0],
+            rawData: rawTxn,
           };
         }
       }
@@ -534,7 +534,7 @@ export class AptosTransaction extends BaseProvider {
 
   async estimateGasUnitPrice(
     chainId: string | number
-  ): Promise<Types.Undefined<string>> {
+  ): Promise<Types.Nullable<string>> {
     try {
       if (!AptosUtil.BaseNodeByChainInfo[Number(chainId)])
         throw new Error("The chain id not found.");
@@ -548,6 +548,29 @@ export class AptosTransaction extends BaseProvider {
       }
     } catch (error) {
       console.log(error);
+      return null;
+    }
+  }
+
+  async executeTransaction(
+    chainId: string,
+    rawTxn: any,
+    owner: VaultTypes.AccountObject
+  ): Promise<Types.Nullable<string>> {
+    try {
+      const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId]);
+      const account = AptosAccount.fromAptosAccountObject(owner);
+      const bcsTxn: Uint8Array =
+        await AptosUtil.AptosApiRequest.generateBCSTransaction(account, rawTxn);
+      const signedTxn: string =
+        await AptosUtil.AptosApiRequest.submitSignedBCSTransaction(
+          client,
+          bcsTxn
+        );
+      return signedTxn;
+    } catch (error) {
+      console.log(error);
+      return null;
     }
   }
 }

@@ -1,6 +1,6 @@
 import { Types } from "@nixjs23n6/types";
 import { ProviderEnums } from "../enums";
-import { TransactionTypes } from "../types";
+import { TransactionTypes, NetworkTypes } from "../types";
 
 export const SUICoinStore = "0x2::coin::Coin<0x2::sui::SUI>";
 export const BaseCoinType = "0x2::coin::Coin";
@@ -30,9 +30,9 @@ export const BaseNodeByChainInfo: Record<number | string, string> = {
   [DevnetChain]: DevNet_NodeURL,
 };
 
-export const Networks: Types.Object<TransactionTypes.Network> = {
+export const Networks: Types.Object<NetworkTypes.Network> = {
   [TestnetChain]: {
-    chainID: TestnetChain,
+    chainId: TestnetChain,
     name: "SUI Testnet",
     faucetURL: "https://faucet.testnet.sui.io/gas",
     nodeURL: TestNet_NodeURL,
@@ -41,7 +41,7 @@ export const Networks: Types.Object<TransactionTypes.Network> = {
     type: "testnet",
   },
   [DevnetChain]: {
-    chainID: DevnetChain,
+    chainId: DevnetChain,
     name: "SUI Devnet",
     faucetURL: "https://faucet.devnet.sui.io/gas",
     nodeURL: DevNet_NodeURL,

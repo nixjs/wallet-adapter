@@ -1,6 +1,6 @@
 import { Types } from "@nixjs23n6/types";
 import { HexString } from "./HexString";
-import { TransactionEnums } from "./enums";
+import { TransactionEnums, ProviderEnums } from "./enums";
 
 export namespace AssetTypes {
   export interface NativeCoin {
@@ -38,16 +38,6 @@ export namespace AssetTypes {
   }
 }
 export namespace TransactionTypes {
-  export interface Network {
-    chainID: string;
-    name: string;
-    nodeURL: string;
-    faucetURL: string;
-    explorerURL: string;
-    nativeToken: string;
-    type: "testnet" | "mainnet" | "devnet";
-  }
-
   export type RawTxSigning = {
     data: any;
   };
@@ -137,4 +127,22 @@ export namespace VaultTypes {
     accountActivated: string;
     accounts: Types.Object<AccountInfo>;
   }>;
+}
+
+export namespace NetworkTypes {
+  export interface Network {
+    chainId: string;
+    name: string;
+    nodeURL: string;
+    faucetURL: string;
+    explorerURL: string;
+    nativeToken: string;
+    type: "testnet" | "mainnet" | "devnet";
+  }
+  export type NetworkData = {
+    data: Types.Object<Network>;
+    name: string;
+    url: string;
+  };
+  export type NetworkByProviders = Record<ProviderEnums.Provider, NetworkData>;
 }

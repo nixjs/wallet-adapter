@@ -1,7 +1,7 @@
 import { Types } from "@nixjs23n6/types";
 import { HexString } from "../HexString";
 import { ProviderEnums } from "../enums";
-import { TransactionTypes } from "../types";
+import { TransactionTypes, NetworkTypes } from "../types";
 
 export const AptosCoinStore =
   "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
@@ -39,9 +39,9 @@ export const BaseNodeByChainInfo: Record<string, string> = {
   DevnetChain: DevNet_NodeURL,
 };
 
-export const Networks: Types.Object<TransactionTypes.Network> = {
+export const Networks: Types.Object<NetworkTypes.Network> = {
   [MainnetChain]: {
-    chainID: MainnetChain,
+    chainId: MainnetChain,
     name: "Aptos Mainnet",
     faucetURL: "",
     nodeURL: MainNet_NodeURL,
@@ -50,7 +50,7 @@ export const Networks: Types.Object<TransactionTypes.Network> = {
     type: "mainnet",
   },
   [TestnetChain]: {
-    chainID: TestnetChain,
+    chainId: TestnetChain,
     name: "Aptos Testnet",
     faucetURL: "https://faucet.testnet.aptoslabs.com",
     nodeURL: TestNet_NodeURL,
@@ -59,7 +59,7 @@ export const Networks: Types.Object<TransactionTypes.Network> = {
     type: "testnet",
   },
   [DevnetChain]: {
-    chainID: DevnetChain,
+    chainId: DevnetChain,
     name: "Aptos Devnet",
     faucetURL: DevNet_NodeURL,
     nodeURL: "https://fullnode.devnet.aptoslabs.com",

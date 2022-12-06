@@ -454,7 +454,7 @@ export class AptosTransaction extends BaseProvider {
     try {
       let result: Types.Nullable<TransactionTypes.RawTransferTransaction> =
         null;
-      const nodeURL = AptosUtil.BaseNodeByChainInfo[Number(chainId)];
+      const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId];
       const client = new AptosClient(nodeURL);
       const { assetId, decimals } = asset;
 
@@ -536,10 +536,10 @@ export class AptosTransaction extends BaseProvider {
     chainId: string | number
   ): Promise<Types.Nullable<string>> {
     try {
-      if (!AptosUtil.BaseNodeByChainInfo[Number(chainId)])
+      if (!AptosUtil.BaseNodeByChainInfo[chainId])
         throw new Error("The chain id not found.");
       const res = await AptosUtil.AptosApiRequest.fetchEstimateApi(
-        AptosUtil.BaseNodeByChainInfo[Number(chainId)]
+        AptosUtil.BaseNodeByChainInfo[chainId]
       );
       if (res.status === "SUCCESS" && res.data?.gas_estimate) {
         return String(res.data.gas_estimate);

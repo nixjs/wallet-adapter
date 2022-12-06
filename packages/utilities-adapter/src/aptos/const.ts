@@ -1,4 +1,5 @@
 import { Types } from "@nixjs23n6/types";
+import { HexString } from "../HexString";
 import { ProviderEnums } from "../enums";
 import { TransactionTypes } from "../types";
 
@@ -22,21 +23,25 @@ export const MainNet_NodeURL = "https://fullnode.mainnet.aptoslabs.com";
 export const TestNet_NodeURL = "https://fullnode.testnet.aptoslabs.com";
 export const DevNet_NodeURL = "https://fullnode.devnet.aptoslabs.com";
 
+export const MainnetChain = "0x1";
+export const TestnetChain = "0x2";
+export const DevnetChain = "0x26";
+
 export const BaseNodeInfo: Record<ProviderEnums.Network, string> = {
   [ProviderEnums.Network.MAIN_NET]: MainNet_NodeURL,
   [ProviderEnums.Network.TEST_NET]: TestNet_NodeURL,
   [ProviderEnums.Network.DEV_NET]: DevNet_NodeURL,
 };
 
-export const BaseNodeByChainInfo: Record<number | string, string> = {
-  1: MainNet_NodeURL,
-  2: TestNet_NodeURL,
-  38: DevNet_NodeURL,
+export const BaseNodeByChainInfo: Record<string, string> = {
+  MainnetChain: MainNet_NodeURL,
+  TestnetChain: TestNet_NodeURL,
+  DevnetChain: DevNet_NodeURL,
 };
 
 export const Networks: Types.Object<TransactionTypes.Network> = {
-  1: {
-    chainID: "1",
+  [MainnetChain]: {
+    chainID: MainnetChain,
     name: "Aptos Mainnet",
     faucetURL: "",
     nodeURL: MainNet_NodeURL,
@@ -44,8 +49,8 @@ export const Networks: Types.Object<TransactionTypes.Network> = {
     nativeToken: "APT",
     type: "mainnet",
   },
-  2: {
-    chainID: "2",
+  [TestnetChain]: {
+    chainID: TestnetChain,
     name: "Aptos Testnet",
     faucetURL: "https://faucet.testnet.aptoslabs.com",
     nodeURL: TestNet_NodeURL,
@@ -53,8 +58,8 @@ export const Networks: Types.Object<TransactionTypes.Network> = {
     nativeToken: "APT",
     type: "testnet",
   },
-  38: {
-    chainID: "38",
+  [DevnetChain]: {
+    chainID: DevnetChain,
     name: "Aptos Devnet",
     faucetURL: DevNet_NodeURL,
     nodeURL: "https://fullnode.devnet.aptoslabs.com",

@@ -15,20 +15,24 @@ export const MainNet_NodeURL = "https://fullnode.mainnet.sui.io";
 export const TestNet_NodeURL = "https://fullnode.testnet.sui.io";
 export const DevNet_NodeURL = "https://fullnode.devnet.sui.io";
 
+export const MainnetChain = "mainnet";
+export const TestnetChain = "testnet";
+export const DevnetChain = "devnet";
+
 export const BaseNodeInfo: Record<ProviderEnums.Network, string> = {
   [ProviderEnums.Network.MAIN_NET]: MainNet_NodeURL,
   [ProviderEnums.Network.TEST_NET]: TestNet_NodeURL,
   [ProviderEnums.Network.DEV_NET]: DevNet_NodeURL,
 };
 export const BaseNodeByChainInfo: Record<number | string, string> = {
-  mainnet: MainNet_NodeURL,
-  testnet: TestNet_NodeURL,
-  devnet: DevNet_NodeURL,
+  [MainnetChain]: MainNet_NodeURL,
+  [TestnetChain]: TestNet_NodeURL,
+  [DevnetChain]: DevNet_NodeURL,
 };
 
 export const Networks: Types.Object<TransactionTypes.Network> = {
-  testnet: {
-    chainID: "testnet",
+  [TestnetChain]: {
+    chainID: TestnetChain,
     name: "SUI Testnet",
     faucetURL: "https://faucet.testnet.sui.io/gas",
     nodeURL: TestNet_NodeURL,
@@ -36,8 +40,8 @@ export const Networks: Types.Object<TransactionTypes.Network> = {
     nativeToken: "SUI",
     type: "testnet",
   },
-  devnet: {
-    chainID: "devnet",
+  [DevnetChain]: {
+    chainID: DevnetChain,
     name: "SUI Devnet",
     faucetURL: "https://faucet.devnet.sui.io/gas",
     nodeURL: DevNet_NodeURL,

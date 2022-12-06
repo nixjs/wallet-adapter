@@ -1,6 +1,6 @@
 {
   "name": "@nixjs23n6/transaction-adapter",
-  "version": "1.1.19",
+  "version": "1.1.20",
   "description": "Libraries that help you get transaction information on the blockchain.",
   "sideEffects": false,
   "main": "lib/cjs/index.js",
@@ -45,12 +45,12 @@
   "peerDependencies": {
     "@nixjs23n6/objectify": ">=0.0.1",
     "@nixjs23n6/types": "^1.0.15",
-    "@nixjs23n6/utilities-adapter": "^1.1.19"
+    "@nixjs23n6/utilities-adapter": "^1.1.20"
   },
   "devDependencies": {
     "@nixjs23n6/objectify": ">=0.0.1",
     "@nixjs23n6/types": "^1.0.15",
-    "@nixjs23n6/utilities-adapter": "^1.1.19",
+    "@nixjs23n6/utilities-adapter": "^1.1.20",
     "@types/lodash-es": "^4.17.6",
     "lodash-es": "^4.17.21"
   }

@@ -49,7 +49,7 @@ export class Ed25519HdKey {
   }
 
   public getPrivateKey(): Uint8Array {
-    return this.keyPair.secretKey.slice(0, 32);
+    return this.keyPair.secretKey;
   }
 
   public getPrivateHexString(): string {

@@ -21,7 +21,9 @@ import {
   SUI_TYPE_ARG,
   Ed25519Keypair,
   RawSigner,
+  PayTransaction,
   Base64DataBuffer,
+  TransactionEffects,
 } from "@mysten/sui.js";
 import { Types } from "@nixjs23n6/types";
 import { SUI } from "@nixjs23n6/hd-wallet-adapter";
@@ -589,6 +591,21 @@ export class TxProvider {
           recipient: to,
           suiObjectId: CoinAPI.getID(coinsWithSufficientAmount[0]),
         });
+
+        const simulateTxn: TransactionEffects =
+          await this.provider.dryRunTransaction(data.toString());
+        console.log(simulateTxn && simulateTxn.status.status === "success");
+        if (simulateTxn && simulateTxn.status.status === "success") {
+          return {
+            rawData: data,
+            gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
+            transactionFee: String(
+              simulateTxn.gasUsed.computationCost +
+                simulateTxn.gasUsed.storageCost -
+                simulateTxn.gasUsed.storageRebate
+            ),
+          };
+        }
         return {
           rawData: data,
           gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
@@ -651,6 +668,19 @@ export class TxProvider {
         amounts: [Number(amount)],
         gasBudget: gasCostForPay,
       });
+      const simulateTxn: TransactionEffects =
+        await this.provider.dryRunTransaction(data.toString());
+      if (simulateTxn && simulateTxn.status.status === "success") {
+        return {
+          rawData: data,
+          gasLimit: String(gasCostForPay),
+          transactionFee: String(
+            simulateTxn.gasUsed.computationCost +
+              simulateTxn.gasUsed.storageCost -
+              simulateTxn.gasUsed.storageRebate
+          ),
+        };
+      }
       return {
         rawData: data,
         gasLimit: String(gasCostForPay),

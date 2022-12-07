@@ -95,9 +95,7 @@ export namespace TransactionTypes {
     gasLimit?: string;
     gasPrice?: string;
   }
-  export interface RawTransferTransaction<T = any> {
-    amount: string;
-    asset: AssetTypes.Asset;
+  export interface SimulateTransaction<T = any> {
     from: VaultTypes.AccountObject;
     to: string;
     chainId: string;
@@ -106,6 +104,17 @@ export namespace TransactionTypes {
     gasLimit?: string;
     gasPrice?: string;
     expirationTimestamp?: string;
+  }
+  export interface RawTransferTransaction {
+    amount: string;
+    asset: AssetTypes.Asset;
+    from: VaultTypes.AccountObject;
+    expirationTimestamp?: string;
+  }
+  export interface RegisterAssetTransaction<T = any> {
+    rawData?: T;
+    asset: AssetTypes.Asset;
+    type: "gas" | "none";
   }
 }
 export namespace VaultTypes {

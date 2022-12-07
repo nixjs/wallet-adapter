@@ -24,7 +24,7 @@ export abstract class BaseProvider {
     type: ProviderEnums.Network
   ): string;
   abstract estimateGasUnitPrice(
-    chainId: string | number
+    chainId: string
   ): Promise<Types.Nullable<string>>;
   abstract transferCoin(
     amount: string,
@@ -34,6 +34,33 @@ export abstract class BaseProvider {
     chainId: string,
     gasLimit?: string,
     gasPrice?: string
-  ): Promise<Types.Nullable<TransactionTypes.RawTransferTransaction>>;
-  // abstract executeTransaction(): Promise<Types.>
+  ): Promise<
+    Types.Nullable<
+      TransactionTypes.SimulateTransaction &
+        TransactionTypes.RawTransferTransaction
+    >
+  >;
+  abstract registerAsset(
+    chainId: string,
+    asset: AssetTypes.Asset,
+    owner: VaultTypes.AccountObject
+  ): Promise<
+    Types.Nullable<
+      TransactionTypes.SimulateTransaction &
+        TransactionTypes.RegisterAssetTransaction<any>
+    >
+  >;
+
+  abstract simulateTransaction(
+    chainId: string,
+    rawTxn: any,
+    owner: VaultTypes.AccountObject,
+    gasLimit?: string,
+    gasPrice?: string
+  ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction>>;
+  abstract executeTransaction(
+    chainId: string,
+    rawTxn: any,
+    owner: VaultTypes.AccountObject
+  ): Promise<Types.Nullable<string>>;
 }

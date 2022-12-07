@@ -450,10 +450,17 @@ export class AptosTransaction extends BaseProvider {
     chainId: string,
     gasLimit?: string,
     gasPrice?: string
-  ): Promise<Types.Nullable<TransactionTypes.RawTransferTransaction>> {
+  ): Promise<
+    Types.Nullable<
+      TransactionTypes.SimulateTransaction &
+        TransactionTypes.RawTransferTransaction
+    >
+  > {
     try {
-      let result: Types.Nullable<TransactionTypes.RawTransferTransaction> =
-        null;
+      let result: Types.Nullable<
+        TransactionTypes.SimulateTransaction &
+          TransactionTypes.RawTransferTransaction
+      > = null;
       const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId];
       const client = new AptosClient(nodeURL);
       const { assetId, decimals } = asset;
@@ -527,14 +534,12 @@ export class AptosTransaction extends BaseProvider {
       }
       return result;
     } catch (error) {
-      console.log(error);
+      console.log("[transferCoin]", error);
       return null;
     }
   }
 
-  async estimateGasUnitPrice(
-    chainId: string | number
-  ): Promise<Types.Nullable<string>> {
+  async estimateGasUnitPrice(chainId: string): Promise<Types.Nullable<string>> {
     try {
       if (!AptosUtil.BaseNodeByChainInfo[chainId])
         throw new Error("The chain id not found.");
@@ -547,7 +552,101 @@ export class AptosTransaction extends BaseProvider {
         throw new Error("The gas price not found");
       }
     } catch (error) {
-      console.log(error);
+      console.log("[estimateGasUnitPrice]", error);
+      return null;
+    }
+  }
+
+  async registerAsset(
+    chainId: string,
+    asset: AssetTypes.Asset,
+    owner: VaultTypes.AccountObject
+  ): Promise<
+    Types.Nullable<
+      TransactionTypes.SimulateTransaction &
+        TransactionTypes.RegisterAssetTransaction<any>
+    >
+  > {
+    try {
+      if (!owner.address || !owner.publicKeyHex)
+        throw new Error("Owner not found");
+      const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId];
+      const client = new AptosClient(nodeURL);
+
+      const fromPrivateKey = new HexString(owner.privateKeyHex);
+      const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array());
+
+      const params = {
+        arguments: [],
+        function: AptosUtil.AptosEnums.PayloadFunctionType.REGISTER,
+        type: "entry_function_payload",
+        type_arguments: [asset.assetId],
+      };
+
+      const rawTxn: TxnBuilderTypes.RawTransaction =
+        await client.generateTransaction(owner.address, params);
+      const simulateTxn: AptosTypes.UserTransaction[] =
+        await AptosUtil.AptosApiRequest.simulateTransaction(
+          client,
+          ourOwner,
+          rawTxn
+        );
+      return {
+        type: "gas",
+        rawData: rawTxn,
+        asset,
+        expirationTimestamp: simulateTxn?.[0].expiration_timestamp_secs,
+        gasLimit: simulateTxn?.[0].max_gas_amount,
+        gasPrice: simulateTxn?.[0].gas_unit_price,
+        transactionFee: simulateTxn?.[0].gas_used,
+        chainId,
+        from: owner,
+        to: "",
+      } as Types.Nullable<
+        TransactionTypes.SimulateTransaction &
+          TransactionTypes.RegisterAssetTransaction
+      >;
+    } catch (error) {
+      console.log("[registerAsset]", error);
+      return null;
+    }
+  }
+
+  async simulateTransaction(
+    chainId: string,
+    rawTxn: any,
+    owner: VaultTypes.AccountObject,
+    gasLimit?: string,
+    gasPrice?: string
+  ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
+    try {
+      const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId];
+      const client = new AptosClient(nodeURL);
+
+      const fromPrivateKey = new HexString(owner.privateKeyHex);
+      const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array());
+
+      const simulateTxn: AptosTypes.UserTransaction[] =
+        await AptosUtil.AptosApiRequest.simulateTransaction(
+          client,
+          ourOwner,
+          rawTxn
+        );
+      if (simulateTxn.length > 0) {
+        return {
+          chainId,
+          from: owner,
+          to: "",
+          transactionFee: simulateTxn[0].gas_used,
+          gasPrice: simulateTxn[0].gas_unit_price,
+          gasLimit: simulateTxn[0].max_gas_amount,
+          rawData: rawTxn,
+          expirationTimestamp: simulateTxn[0].expiration_timestamp_secs,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.log("[SimulateTransaction]", error);
       return null;
     }
   }
@@ -569,7 +668,7 @@ export class AptosTransaction extends BaseProvider {
         );
       return signedTxn;
     } catch (error) {
-      console.log(error);
+      console.log("[simulateTransaction]", error);
       return null;
     }
   }

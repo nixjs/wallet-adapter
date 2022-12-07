@@ -12,6 +12,7 @@ import {
   SuiExecuteTransactionResponse,
   CertifiedTransaction,
   SuiCertifiedTransactionEffects,
+  TransactionEffects,
 } from "@mysten/sui.js";
 import { BaseProvider } from "../base";
 import { Provider, executeTransaction } from "./api";
@@ -51,6 +52,38 @@ export class SUITransaction extends BaseProvider {
     return `${explorerURL}/transactions/${hash}?network=${type.toLowerCase()}`;
   }
 
+  async registerAsset(
+    chainId: string,
+    asset: AssetTypes.Asset,
+    owner: VaultTypes.AccountObject
+  ): Promise<
+    Types.Nullable<
+      TransactionTypes.SimulateTransaction &
+        TransactionTypes.RegisterAssetTransaction<any>
+    >
+  > {
+    try {
+      let result: Types.Nullable<
+        TransactionTypes.SimulateTransaction &
+          TransactionTypes.RegisterAssetTransaction
+      > = null;
+      const t = await 1;
+      result = {
+        type: "none",
+        rawData: null,
+        asset: asset,
+        chainId,
+        from: owner,
+        to: "",
+        transactionFee: "",
+      };
+      return result;
+    } catch (error) {
+      console.log("[registerAsset]", error);
+      return null;
+    }
+  }
+
   async transferCoin(
     amount: string,
     asset: AssetTypes.Asset,
@@ -59,10 +92,17 @@ export class SUITransaction extends BaseProvider {
     chainId: string,
     gasLimit?: string | undefined,
     gasPrice?: string | undefined
-  ): Promise<Types.Nullable<TransactionTypes.RawTransferTransaction>> {
+  ): Promise<
+    Types.Nullable<
+      TransactionTypes.SimulateTransaction &
+        TransactionTypes.RawTransferTransaction
+    >
+  > {
     try {
-      let result: Types.Nullable<TransactionTypes.RawTransferTransaction> =
-        null;
+      let result: Types.Nullable<
+        TransactionTypes.SimulateTransaction &
+          TransactionTypes.RawTransferTransaction
+      > = null;
       const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId]);
       if (from && from.publicKeyHex) {
         const ourAmount = Helper.Decimal.toDecimal(amount, asset.decimals);
@@ -94,15 +134,52 @@ export class SUITransaction extends BaseProvider {
     }
   }
 
-  async estimateGasUnitPrice(
-    chainId: string | number
-  ): Promise<Types.Nullable<string>> {
+  async estimateGasUnitPrice(chainId: string): Promise<Types.Nullable<string>> {
     try {
       if (!SUIUtil.BaseNodeByChainInfo[chainId])
         throw new Error("The chain id not found.");
       return "0";
     } catch (error) {
-      console.log(error);
+      console.log("[transferCoin]", error);
+      return null;
+    }
+  }
+
+  async simulateTransaction(
+    chainId: string,
+    rawTxn: any,
+    owner: VaultTypes.AccountObject,
+    gasLimit?: string,
+    gasPrice?: string
+  ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
+    try {
+      const provider = new JsonRpcProvider(
+        SUIUtil.BaseNodeByChainInfo[chainId],
+        {
+          skipDataValidation: true,
+        }
+      );
+      const simulateTxn: TransactionEffects = await provider.dryRunTransaction(
+        rawTxn.toString()
+      );
+      if (simulateTxn && simulateTxn.status.status === "success") {
+        return {
+          chainId,
+          from: owner,
+          transactionFee: String(
+            simulateTxn.gasUsed.computationCost +
+              simulateTxn.gasUsed.storageCost -
+              simulateTxn.gasUsed.storageRebate
+          ),
+          to: "",
+          gasPrice,
+          gasLimit,
+          rawData: rawTxn,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.log("[simulateTransaction", error);
       return null;
     }
   }
@@ -164,7 +241,7 @@ export class SUITransaction extends BaseProvider {
       }
       return null;
     } catch (error) {
-      console.log(error);
+      console.log("[executeTransaction]", error);
       return null;
     }
   }

@@ -1,7 +1,6 @@
 import { Types } from "@nixjs23n6/types";
-import { HexString } from "../HexString";
 import { ProviderEnums } from "../enums";
-import { TransactionTypes, NetworkTypes } from "../types";
+import { NetworkTypes } from "../types";
 
 export const AptosCoinStore =
   "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
@@ -47,7 +46,7 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
     nodeURL: MainnetNodeURL,
     explorerURL: "https://explorer.aptoslabs.com",
     nativeToken: "APT",
-    type: "mainnet",
+    type: ProviderEnums.Network.MAIN_NET,
   },
   [TestnetChain]: {
     chainId: TestnetChain,
@@ -56,7 +55,7 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
     nodeURL: TestnetNodeURL,
     explorerURL: "https://explorer.aptoslabs.com",
     nativeToken: "APT",
-    type: "testnet",
+    type: ProviderEnums.Network.TEST_NET,
   },
   [DevnetChain]: {
     chainId: DevnetChain,
@@ -65,6 +64,6 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
     nodeURL: DevnetNodeURL,
     explorerURL: "https://explorer.aptoslabs.com",
     nativeToken: "APT",
-    type: "devnet",
+    type: ProviderEnums.Network.DEV_NET,
   },
 };

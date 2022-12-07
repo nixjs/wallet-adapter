@@ -146,7 +146,7 @@ export namespace NetworkTypes {
     faucetURL: string;
     explorerURL: string;
     nativeToken: string;
-    type: "testnet" | "mainnet" | "devnet";
+    type: ProviderEnums.Network;
   }
   export type NetworkData = {
     data: Types.Object<Network>;

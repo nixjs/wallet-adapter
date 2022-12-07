@@ -145,7 +145,7 @@ export class AptosAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.AssetAmount[]> {
     try {
-      const balances: AssetTypes.AssetAmount[] = [];
+      let balances: AssetTypes.AssetAmount[] = [];
       if (nodeURL && address) {
         const resources =
           await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(
@@ -172,7 +172,7 @@ export class AptosAsset extends BaseProvider {
             } as AssetTypes.AssetAmount);
           }
         }
-      } else [DefaultAssetBalance];
+      } else balances = [DefaultAssetBalance];
       return balances;
     } catch (error) {
       console.log("[getAssetBalances]", error);

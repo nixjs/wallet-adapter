@@ -3,15 +3,13 @@ import { ProviderEnums, VaultTypes } from "@nixjs23n6/utilities-adapter";
 import { BaseProvider } from "./base";
 
 export class Vault {
-  provider: string;
   private readonly _classes: Types.Class[];
   private _container: Types.Object<any> = {};
   private _currentType?: ProviderEnums.Provider;
   private _prevType?: ProviderEnums.Provider;
   private _mnemonic?: string;
 
-  constructor(args: Types.Class[], provider?: string, mnemonics?: string) {
-    this.provider = provider || "";
+  constructor(args: Types.Class[], mnemonics?: string) {
     this._classes = args;
     this._mnemonic = mnemonics;
   }

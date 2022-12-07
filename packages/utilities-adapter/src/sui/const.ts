@@ -31,6 +31,15 @@ export const BaseNodeByChainInfo: Record<number | string, string> = {
 };
 
 export const Networks: Types.Object<NetworkTypes.Network> = {
+  [MainnetChain]: {
+    chainId: MainnetChain,
+    name: "SUI Mainnet",
+    faucetURL: "",
+    nodeURL: MainnetNodeURL,
+    explorerURL: "https://explorer.sui.io",
+    nativeToken: "SUI",
+    type: ProviderEnums.Network.MAIN_NET,
+  },
   [TestnetChain]: {
     chainId: TestnetChain,
     name: "SUI Testnet",
@@ -38,7 +47,7 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
     nodeURL: TestnetNodeURL,
     explorerURL: "https://explorer.sui.io",
     nativeToken: "SUI",
-    type: "testnet",
+    type: ProviderEnums.Network.TEST_NET,
   },
   [DevnetChain]: {
     chainId: DevnetChain,
@@ -47,6 +56,6 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
     nodeURL: DevnetNodeURL,
     explorerURL: "https://explorer.sui.io",
     nativeToken: "SUI",
-    type: "devnet",
+    type: ProviderEnums.Network.DEV_NET,
   },
 };

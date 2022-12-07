@@ -10,6 +10,7 @@ import {
   Helper,
   HexString,
 } from "@nixjs23n6/utilities-adapter";
+import { Aptos as AptosAsset } from "@nixjs23n6/asset-adapter";
 import {
   AptosClient,
   AptosAccount,
@@ -580,7 +581,9 @@ export class AptosTransaction extends BaseProvider {
         arguments: [],
         function: AptosUtil.AptosEnums.PayloadFunctionType.REGISTER,
         type: "entry_function_payload",
-        type_arguments: [asset.assetId],
+        type_arguments: [
+          `${AptosAsset.AptosApiRequest.getCoinAddressType(asset.assetId)}`,
+        ],
       };
 
       const rawTxn: TxnBuilderTypes.RawTransaction =

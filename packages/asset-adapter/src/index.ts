@@ -1,4 +1,4 @@
 export * from "./base";
-export * as Aptos from "./aptos/asset";
-export * as SUI from "./sui/asset";
+export * as Aptos from "./aptos";
+export * as SUI from "./sui";
 export * from "./asset";

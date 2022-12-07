@@ -48,7 +48,6 @@ export namespace TransactionTypes {
 
   export type SignedTransaction = {
     signature: HexString;
-    publicKey: HexString;
     data: HexString;
   };
 

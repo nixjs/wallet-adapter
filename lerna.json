@@ -2,7 +2,7 @@
   "packages": [
     "packages/*"
   ],
-  "version": "1.1.30",
+  "version": "1.1.31",
   "useWorkspaces": true,
   "$schema": "node_modules/lerna/schemas/lerna-schema.json",
   "useNx": true

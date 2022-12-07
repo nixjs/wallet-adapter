@@ -33,7 +33,10 @@ export abstract class BaseProvider {
    * @param hexString A regular string or Uint8Array to sign
    * @returns A signature HexString
    */
-  abstract signMessage(message: Uint8Array | string): Promise<HexString>;
+  abstract signMessage(
+    message: Uint8Array | string,
+    privateKey?: HexString
+  ): Promise<HexString>;
 
   /**
    * Signs specified `hexString` with account's private key
@@ -41,6 +44,7 @@ export abstract class BaseProvider {
    * @returns A signature HexString
    */
   abstract signTransaction(
-    unsigned: TransactionTypes.UnsignedTransaction
+    unsigned: TransactionTypes.UnsignedTransaction,
+    privateKey?: HexString
   ): Promise<TransactionTypes.SignedTransaction>;
 }

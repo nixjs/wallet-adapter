@@ -1,4 +1,5 @@
 import * as bip39 from "@scure/bip39";
+import nacl from "tweetnacl";
 import { Buffer } from "buffer";
 import { Ed25519HdKey } from "./hdkey";
 import {
@@ -88,7 +89,10 @@ export class AptosVault extends BaseProvider {
     };
   }
 
-  async signMessage(message: Uint8Array | string): Promise<HexString> {
+  async signMessage(
+    message: Uint8Array | string,
+    privateKey?: HexString
+  ): Promise<HexString> {
     function Uint8ArrayToBuffer(bytes: Uint8Array) {
       const buffer = Buffer.alloc(bytes.byteLength);
       for (let i = 0; i < buffer.length; ++i) {
@@ -100,23 +104,34 @@ export class AptosVault extends BaseProvider {
       message instanceof Uint8Array
         ? Uint8ArrayToBuffer(message)
         : Buffer.from(message);
-    const signature = await this.hdKey.sign(
-      HexString.fromBuffer(buffer).toString()
-    );
+    let signature: HexString;
+    if (privateKey) {
+      const toSign = HexString.ensure(
+        HexString.fromBuffer(buffer)
+      ).toUint8Array();
+      const signed = await nacl.sign(toSign, privateKey.toUint8Array());
+      signature = HexString.fromUint8Array(signed);
+    } else {
+      signature = await this.hdKey.sign(HexString.fromBuffer(buffer));
+    }
     return signature;
   }
 
   async signTransaction(
-    unsigned: TransactionTypes.UnsignedTransaction
+    unsigned: TransactionTypes.UnsignedTransaction,
+    privateKey?: HexString
   ): Promise<TransactionTypes.SignedTransaction> {
-    const signature = await this.hdKey.signBuffer(
-      Buffer.from(unsigned.data.hex())
-    );
-    const publicKey = await this.hdKey.getPublicKey();
+    let signature: HexString;
+    if (privateKey) {
+      const toSign = HexString.ensure(unsigned.data.hex()).toUint8Array();
+      const signed = await nacl.sign(toSign, privateKey.toUint8Array());
+      signature = HexString.fromUint8Array(signed);
+    } else {
+      signature = await this.hdKey.signBuffer(Buffer.from(unsigned.data.hex()));
+    }
     return {
       data: unsigned.data,
       signature,
-      publicKey: HexString.fromUint8Array(publicKey),
     };
   }
 }

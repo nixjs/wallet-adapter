@@ -63,7 +63,7 @@ export class Ed25519HdKey {
     return HexString.fromUint8Array(signature.slice(0, 64));
   }
 
-  public sign(message: string): HexString {
+  public sign(message: HexString): HexString {
     const toSign = HexString.ensure(message).toUint8Array();
     return this.signBuffer(toSign);
   }

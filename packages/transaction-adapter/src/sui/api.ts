@@ -9,9 +9,7 @@ import {
   getExecutionStatusType,
   getPaySuiTransaction,
   getMoveObject,
-  MoveCallTransaction,
   getMoveCallTransaction,
-  TransferSuiTransaction,
   SuiExecuteTransactionResponse,
   getObjectId,
   OwnedObjectRef,
@@ -21,7 +19,6 @@ import {
   SUI_TYPE_ARG,
   Ed25519Keypair,
   RawSigner,
-  PayTransaction,
   Base64DataBuffer,
   TransactionEffects,
 } from "@mysten/sui.js";
@@ -182,7 +179,7 @@ export class QueryProvider {
     const effects = await this.provider.getTransactionWithEffectsBatch(digests);
     const results = [];
 
-    const limit = RateLimit(8); // rps
+    const limit = RateLimit(20); // rps
     for (const effect of effects) {
       const data = getTransactionData(effect.certificate);
       await limit();

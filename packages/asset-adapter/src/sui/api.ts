@@ -14,10 +14,13 @@ export namespace SUIApiRequest {
   ): Promise<SuiObject[]> {
     const objectInfos = await query.getObjectsOwnedByAddress(address);
     const objectIds = objectInfos.map((obj) => obj.objectId);
-    const res = await query.getObjectBatch(objectIds);
-    return res
-      .filter((r) => r.status === "Exists")
-      .map((r) => getObjectExistsResponse(r) as SuiObject);
+    if (objectIds.length > 0) {
+      const res = await query.getObjectBatch(objectIds);
+      return res
+        .filter((r) => r.status === "Exists")
+        .map((r) => getObjectExistsResponse(r) as SuiObject);
+    }
+    return [];
   }
 
   export async function getOwnedCoins(

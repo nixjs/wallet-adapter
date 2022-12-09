@@ -67,22 +67,27 @@ export namespace TransactionTypes {
     data: TransactionObject;
     version?: number;
   }
-  export type TransactionObject = CoinObject | NFTObject | ScriptObject;
+  export type TransactionObject =
+    | CoinObject
+    | NFTObject
+    | ScriptObject
+    | RegisterAssetObject;
   export type CoinObject = {
     type: "coin" | "token";
     symbol: string;
     balance: string;
   };
-
   export type NFTObject = {
     type: "nft" | "collection";
     name: string;
     description: string;
     url: string;
   };
-
   export type ScriptObject = {
     [data: string]: any;
+  };
+  export type RegisterAssetObject = {
+    assetId: string;
   };
 
   export interface TransferRequest {

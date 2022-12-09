@@ -17,6 +17,7 @@ export namespace TransactionEnums {
     MINT,
     SCRIPT,
     CLAIM,
+    REGISTER_ASSET,
     UNKNOWN,
   }
   export enum TransactionStatus {

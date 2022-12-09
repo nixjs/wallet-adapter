@@ -276,6 +276,18 @@ export class AptosTransaction extends BaseProvider {
           type: "coin",
         } as TransactionTypes.CoinObject;
       } else if (
+        String(mTxn.payload.function).includes(
+          AptosUtil.AptosEnums.PayloadFunctionType.REGISTER
+        )
+      ) {
+        txType = TransactionEnums.TransactionType.REGISTER_ASSET;
+        to = mTxn.sender;
+        txObj = {
+          assetId: mTxn.payload.type_arguments?.[0]
+            ? mTxn.payload.type_arguments?.[0]?.split("::")?.[2]
+            : "Unknown",
+        } as TransactionTypes.RegisterAssetObject;
+      } else if (
         !mTxn.payload.function &&
         mTxn.payload.type === "script_payload"
       ) {
@@ -386,15 +398,19 @@ export class AptosTransaction extends BaseProvider {
           symbol: AptosUtil.AptosCoinSymbol,
           type: "coin",
         } as TransactionTypes.CoinObject;
-      }
-      // else if (String(txn.payload.function).includes(AptosUtil.AptosEnums.PayloadFunctionType.MINT)) {
-      //     console.log('AptosUtil.AptosEnums.PayloadFunctionType.MINT')
-      //     console.log(txn)
-      //     txType = TransactionEnums.TransactionType.MINT
-      //     // to = ''
-      //     amount = txn.payload.arguments?.[0]
-      // }
-      else if (
+      } else if (
+        String(txn.payload.function).includes(
+          AptosUtil.AptosEnums.PayloadFunctionType.REGISTER
+        )
+      ) {
+        txType = TransactionEnums.TransactionType.REGISTER_ASSET;
+        to = txn.sender;
+        txObj = {
+          assetId: txn.payload.type_arguments?.[0]
+            ? txn.payload.type_arguments?.[0]?.split("::")?.[2]
+            : "Unknown",
+        } as TransactionTypes.RegisterAssetObject;
+      } else if (
         (!txn.payload.function && txn.payload.type === "script_payload") ||
         String(txn.payload.function).includes(
           AptosUtil.AptosEnums.PayloadFunctionType.ACCEPT_OFFER_COLLECTION

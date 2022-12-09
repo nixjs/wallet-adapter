@@ -15,9 +15,9 @@ export const MainnetNodeURL = "https://fullnode.mainnet.sui.io";
 export const TestnetNodeURL = "https://fullnode.testnet.sui.io";
 export const DevnetNodeURL = "https://fullnode.devnet.sui.io";
 
-export const MainnetChain = "mainnet";
-export const TestnetChain = "testnet";
-export const DevnetChain = "devnet";
+export const MainnetChain = "0x1:mainnet";
+export const TestnetChain = "0x2:testnet";
+export const DevnetChain = "0x2:devnet";
 
 export const BaseNodeInfo: Record<ProviderEnums.Network, string> = {
   [ProviderEnums.Network.MAIN_NET]: MainnetNodeURL,

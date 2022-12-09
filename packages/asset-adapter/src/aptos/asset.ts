@@ -62,7 +62,7 @@ export class AptosAsset extends BaseProvider {
             );
           const groupAddress = Helper.groupBy(ourResources, (d) => d.address);
           const newResourceByAddress = Object.keys(groupAddress);
-          const limit = RateLimit(8);
+          const limit = RateLimit(12);
           const addressInfo: Types.Object<AptosTypes.MoveResource[]> = {};
           for (let i = 0; i < newResourceByAddress.length; i++) {
             const address = newResourceByAddress[i];
@@ -85,7 +85,7 @@ export class AptosAsset extends BaseProvider {
             }
           }
           if (Object.keys(addressInfo).length > 0) {
-            const limit2 = RateLimit(8);
+            const limit2 = RateLimit(12);
             for (let j = 0; j < ourResources.length; j++) {
               const target = ourResources[j];
               await limit2();
@@ -132,8 +132,11 @@ export class AptosAsset extends BaseProvider {
             }
           }
         }
-      } else assets = [DefaultAsset];
-      return Helper.reduceNativeCoin(assets, AptosUtil.AptosCoinStore);
+      }
+      if (assets.length > 0) {
+        return Helper.reduceNativeCoin(assets, AptosUtil.AptosCoinStore);
+      }
+      return [DefaultAsset];
     } catch (error) {
       console.log("[getAssets]", error);
       return [DefaultAsset];
@@ -234,7 +237,7 @@ export class AptosAsset extends BaseProvider {
                 depEvents.data,
                 withdEvents.data
               );
-              const limit = RateLimit(8);
+              const limit = RateLimit(12);
               for (let i = 0; i < events.length; i++) {
                 const element = events[i];
                 const data = element.data.id.token_data_id;

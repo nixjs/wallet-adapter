@@ -29,13 +29,13 @@ export class SUIAsset extends BaseProvider {
     address: string
   ): Promise<AssetTypes.Asset[]> {
     try {
-      let assets: AssetTypes.Asset[] = [];
+      let assets: AssetTypes.Asset[] = [DefaultAsset];
       const query = new JsonRpcProvider(nodeURL, {
         skipDataValidation: false,
       });
       if (nodeURL && address) {
         const coins = await SUIApiRequest.getOwnedCoins(query, address);
-        assets = uniqBy(coins, "symbol").map(
+        const result = uniqBy(coins, "symbol").map(
           (c) =>
             ({
               assetId: c.object.type,
@@ -46,8 +46,10 @@ export class SUIAsset extends BaseProvider {
               isNative: c.object.type === SUIUtil.SUICoinStore,
             } as AssetTypes.Asset)
         );
-      } else assets = [DefaultAsset];
-      return Helper.reduceNativeCoin(assets, SUIUtil.SUICoinStore);
+        if (result.length > 0)
+          return Helper.reduceNativeCoin(result, SUIUtil.SUICoinStore);
+      }
+      return assets;
     } catch (error) {
       return [DefaultAsset];
     }

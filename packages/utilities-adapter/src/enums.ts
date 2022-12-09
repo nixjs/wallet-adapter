@@ -18,7 +18,6 @@ export namespace TransactionEnums {
     SCRIPT,
     CLAIM,
     REGISTER_ASSET,
-    UNKNOWN,
   }
   export enum TransactionStatus {
     FAILED,

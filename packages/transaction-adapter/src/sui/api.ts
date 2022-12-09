@@ -324,6 +324,7 @@ export class QueryProvider {
               arguments: moveCall.arguments?.map((arg) => JSON.stringify(arg)),
               created: [],
               mutated: [],
+              overview: moveCall.function || "Unknown",
             } as TransactionTypes.ScriptObject;
           results.push({
             timestamp: effect.timestamp_ms,
@@ -385,7 +386,8 @@ export class QueryProvider {
       return {
         type: "object_id",
         id: getObjectId(resp),
-      };
+        overview: getObjectId(resp),
+      } as TransactionTypes.ScriptObject;
     });
     return objects;
   }

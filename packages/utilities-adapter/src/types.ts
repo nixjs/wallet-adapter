@@ -84,6 +84,7 @@ export namespace TransactionTypes {
     url: string;
   };
   export type ScriptObject = {
+    overview: string;
     [data: string]: any;
   };
   export type RegisterAssetObject = {

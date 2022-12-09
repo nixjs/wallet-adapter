@@ -179,6 +179,7 @@ export namespace SUIApiRequest {
               arguments: moveCall.arguments?.map((arg) => JSON.stringify(arg)),
               created: [],
               mutated: [],
+              overview: moveCall.function || "Unknown",
             } as TransactionTypes.ScriptObject;
           results.push({
             timestamp: effect.timestamp_ms,

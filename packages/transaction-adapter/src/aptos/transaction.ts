@@ -180,7 +180,7 @@ export class AptosTransaction extends BaseProvider {
     return accounts.map((mTxn: any) => {
       let txObj: Types.Undefined<TransactionTypes.TransactionObject>;
       let txType: TransactionEnums.TransactionType =
-        TransactionEnums.TransactionType.UNKNOWN;
+        TransactionEnums.TransactionType.SCRIPT;
       let to = "";
       if (
         String(mTxn.payload.function).includes(
@@ -193,7 +193,7 @@ export class AptosTransaction extends BaseProvider {
         txType =
           mTxn.sender === address
             ? TransactionEnums.TransactionType.SEND
-            : TransactionEnums.TransactionType.UNKNOWN;
+            : TransactionEnums.TransactionType.SCRIPT;
         to = mTxn.payload.arguments?.[0];
         if (
           String(mTxn.payload.function).includes(
@@ -235,7 +235,7 @@ export class AptosTransaction extends BaseProvider {
         txType =
           mTxn.sender === address
             ? TransactionEnums.TransactionType.MINT
-            : TransactionEnums.TransactionType.UNKNOWN;
+            : TransactionEnums.TransactionType.SCRIPT;
         to = mTxn.sender;
         if (
           String(mTxn.payload.function).includes(
@@ -268,7 +268,7 @@ export class AptosTransaction extends BaseProvider {
         txType =
           mTxn.sender === address
             ? TransactionEnums.TransactionType.CLAIM
-            : TransactionEnums.TransactionType.UNKNOWN;
+            : TransactionEnums.TransactionType.SCRIPT;
         to = mTxn.sender;
         txObj = {
           balance: mTxn.payload.arguments?.[2],
@@ -287,23 +287,12 @@ export class AptosTransaction extends BaseProvider {
             ? mTxn.payload.type_arguments?.[0]?.split("::")?.[2]
             : "Unknown",
         } as TransactionTypes.RegisterAssetObject;
-      } else if (
-        !mTxn.payload.function &&
-        mTxn.payload.type === "script_payload"
-      ) {
-        txType =
-          mTxn.sender === address
-            ? TransactionEnums.TransactionType.SCRIPT
-            : TransactionEnums.TransactionType.UNKNOWN;
-        to = mTxn.sender;
-        txObj = {
-          ...mTxn.payload,
-        } as TransactionTypes.ScriptObject;
       } else {
-        txType = TransactionEnums.TransactionType.UNKNOWN;
+        txType = TransactionEnums.TransactionType.SCRIPT;
         to = mTxn.sender;
         txObj = {
           ...mTxn.payload,
+          overview: mTxn.payload?.function || "Unknown",
         } as TransactionTypes.ScriptObject;
       }
       return {
@@ -343,7 +332,7 @@ export class AptosTransaction extends BaseProvider {
     return txns.map((txn: any) => {
       let txObj: Types.Undefined<TransactionTypes.TransactionObject>;
       let txType: TransactionEnums.TransactionType =
-        TransactionEnums.TransactionType.UNKNOWN;
+        TransactionEnums.TransactionType.SCRIPT;
       let to = "";
       if (
         String(txn.payload.function).includes(
@@ -410,21 +399,11 @@ export class AptosTransaction extends BaseProvider {
             ? txn.payload.type_arguments?.[0]?.split("::")?.[2]
             : "Unknown",
         } as TransactionTypes.RegisterAssetObject;
-      } else if (
-        (!txn.payload.function && txn.payload.type === "script_payload") ||
-        String(txn.payload.function).includes(
-          AptosUtil.AptosEnums.PayloadFunctionType.ACCEPT_OFFER_COLLECTION
-        )
-      ) {
+      } else {
         txType = TransactionEnums.TransactionType.SCRIPT;
         txObj = {
           ...txn.payload,
-        } as TransactionTypes.ScriptObject;
-      } else {
-        txType = TransactionEnums.TransactionType.UNKNOWN;
-        to = txn.sender;
-        txObj = {
-          ...txn.payload,
+          overview: txn.payload?.function || "Unknown",
         } as TransactionTypes.ScriptObject;
       }
       return {

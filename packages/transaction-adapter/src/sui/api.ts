@@ -440,10 +440,13 @@ export class TxProvider {
     recipient: string,
     vault: SUI.SUIVault
   ) {
-    const data = await this.serializer.newTransferObject(vault.address(), {
-      objectId,
-      gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER,
-      recipient,
+    const data = await this.serializer.serializeToBytes(vault.address(), {
+      kind: "transferObject",
+      data: {
+        gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER,
+        objectId,
+        recipient,
+      },
     });
     const signedTx = await vault.signTransaction({
       data: HexString.fromUint8Array(data.getData()),
@@ -482,11 +485,14 @@ export class TxProvider {
       }
       const inputCoinIDs = inputCoins.map((c) => CoinAPI.getID(c));
       const gasBudget = SUIUtil.Coin.estimatedGasCostForPay(inputCoins.length);
-      const data = await this.serializer.newPay(from.address, {
-        inputCoins: inputCoinIDs,
-        recipients: [to],
-        amounts: [Number(amount)],
-        gasBudget,
+      const data = await this.serializer.serializeToBytes(from.address, {
+        data: {
+          inputCoins: inputCoinIDs,
+          recipients: [to],
+          amounts: [Number(amount)],
+          gasBudget,
+        },
+        kind: "pay",
       });
       return {
         rawData: data,
@@ -582,11 +588,14 @@ export class TxProvider {
           actualAmount
         );
       if (coinsWithSufficientAmount.length > 0) {
-        const data = await this.serializer.newTransferSui(from.address, {
-          amount: amount,
-          gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI,
-          recipient: to,
-          suiObjectId: CoinAPI.getID(coinsWithSufficientAmount[0]),
+        const data = await this.serializer.serializeToBytes(from.address, {
+          kind: "transferSui",
+          data: {
+            amount: amount,
+            gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI,
+            recipient: to,
+            suiObjectId: CoinAPI.getID(coinsWithSufficientAmount[0]),
+          },
         });
 
         const simulateTxn: TransactionEffects =
@@ -639,11 +648,14 @@ export class TxProvider {
           );
         }
 
-        const data = await this.serializer.newTransferSui(from.address, {
-          suiObjectId: CoinAPI.getID(coinWithLargestBalance),
-          gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI,
-          recipient: to,
-          amount: gasCostForPay,
+        const data = await this.serializer.serializeToBytes(from.address, {
+          kind: "transferSui",
+          data: {
+            suiObjectId: CoinAPI.getID(coinWithLargestBalance),
+            gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI,
+            recipient: to,
+            amount: gasCostForPay,
+          },
         });
         const keypair = new Ed25519Keypair({
           publicKey: new HexString(from.publicKeyHex).toUint8Array(),
@@ -659,11 +671,14 @@ export class TxProvider {
             []
           );
       }
-      const data = await this.serializer.newPay(from.address, {
-        inputCoins: inputCoins.map((c) => CoinAPI.getID(c)),
-        recipients: [to],
-        amounts: [Number(amount)],
-        gasBudget: gasCostForPay,
+      const data = await this.serializer.serializeToBytes(from.address, {
+        kind: "pay",
+        data: {
+          inputCoins: inputCoins.map((c) => CoinAPI.getID(c)),
+          recipients: [to],
+          amounts: [Number(amount)],
+          gasBudget: gasCostForPay,
+        },
       });
       const simulateTxn: TransactionEffects =
         await this.provider.dryRunTransaction(data.toString());

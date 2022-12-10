@@ -25,10 +25,15 @@ export abstract class BaseProvider {
         chainId: string,
         rawTxn: any,
         owner: VaultTypes.AccountObject,
+        type: 'transfer' | 'script',
         gasLimit?: string,
         gasPrice?: string
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction>>
     abstract executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Types.Nullable<string>>
-    abstract checkReceiveNFTStatus(chainId: string, address: string): Promise<boolean>
-    abstract allowReceiveNFT(chainId: string, owner: VaultTypes.AccountObject): Promise<boolean>
+    abstract checkReceiveNFTStatus(chainId: string, address: string, allow: boolean): Promise<boolean>
+    abstract allowReceiveNFT(
+        chainId: string,
+        owner: VaultTypes.AccountObject,
+        allow: boolean
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction>>
 }

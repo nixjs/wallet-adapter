@@ -39,9 +39,9 @@ export class SUITransaction extends BaseProvider {
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction<any>>> {
         try {
             let result: Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction> = null
-            const t = await 1
             result = {
                 type: 'none',
+                transactionType: 'script',
                 rawData: null,
                 asset: asset,
                 chainId,
@@ -82,6 +82,7 @@ export class SUITransaction extends BaseProvider {
                         gasPrice,
                         transactionFee: rawData.transactionFee,
                         rawData: rawData.rawData,
+                        transactionType: 'transfer',
                     }
             }
             return result
@@ -105,6 +106,7 @@ export class SUITransaction extends BaseProvider {
         chainId: string,
         rawTxn: any,
         owner: VaultTypes.AccountObject,
+        type: 'transfer' | 'script',
         gasLimit?: string,
         gasPrice?: string
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
@@ -124,6 +126,7 @@ export class SUITransaction extends BaseProvider {
                     gasPrice,
                     gasLimit,
                     rawData: rawTxn,
+                    transactionType: type,
                 }
             }
             return null
@@ -181,7 +184,11 @@ export class SUITransaction extends BaseProvider {
     async checkReceiveNFTStatus(chainId: string, address: string): Promise<boolean> {
         return true
     }
-    async allowReceiveNFT(chainId: string, owner: VaultTypes.AccountObject): Promise<boolean> {
-        return true
+    async allowReceiveNFT(
+        chainId: string,
+        owner: VaultTypes.AccountObject,
+        allow: boolean
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
+        return null
     }
 }

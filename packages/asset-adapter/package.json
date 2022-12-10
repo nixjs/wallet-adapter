@@ -1,6 +1,6 @@
 {
     "name": "@nixjs23n6/asset-adapter",
-    "version": "1.1.38",
+    "version": "1.1.39",
     "description": "Assets",
     "sideEffects": false,
     "main": "lib/cjs/index.js",
@@ -38,20 +38,20 @@
         "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
     },
     "dependencies": {
-        "@mysten/sui.js": "^0.19.0",
+        "@mysten/sui.js": "^0.20.0",
         "aptos": "^1.4.0",
         "async-sema": "^3.1.1",
         "axios": ">1.1.0"
     },
     "peerDependencies": {
-        "@mysten/sui.js": "^0.19.0",
+        "@mysten/sui.js": "^0.20.0",
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^1.1.38"
+        "@nixjs23n6/utilities-adapter": "^1.1.39"
     },
     "devDependencies": {
-        "@mysten/sui.js": "^0.19.0",
+        "@mysten/sui.js": "^0.20.0",
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^1.1.38",
+        "@nixjs23n6/utilities-adapter": "^1.1.39",
         "@types/lodash-es": "^4.17.6",
         "lodash-es": "^4.17.21"
     }

@@ -1,6 +1,6 @@
 {
     "name": "@nixjs23n6/transaction-adapter",
-    "version": "1.1.38",
+    "version": "1.1.39",
     "description": "Libraries that help you get transaction information on the blockchain.",
     "sideEffects": false,
     "main": "lib/cjs/index.js",
@@ -38,23 +38,23 @@
     },
     "dependencies": {
         "@mysten/bcs": "^0.5.0",
-        "@mysten/sui.js": "^0.19.0",
+        "@mysten/sui.js": "^0.20.0",
         "aptos": "^1.4.0",
         "async-sema": "^3.1.1"
     },
     "peerDependencies": {
-        "@nixjs23n6/asset-adapter": "^1.1.38",
-        "@nixjs23n6/hd-wallet-adapter": "^1.1.38",
+        "@nixjs23n6/asset-adapter": "^1.1.39",
+        "@nixjs23n6/hd-wallet-adapter": "^1.1.39",
         "@nixjs23n6/objectify": ">=0.0.1",
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^1.1.38"
+        "@nixjs23n6/utilities-adapter": "^1.1.39"
     },
     "devDependencies": {
-        "@nixjs23n6/asset-adapter": "^1.1.38",
-        "@nixjs23n6/hd-wallet-adapter": "^1.1.38",
+        "@nixjs23n6/asset-adapter": "^1.1.39",
+        "@nixjs23n6/hd-wallet-adapter": "^1.1.39",
         "@nixjs23n6/objectify": ">=0.0.1",
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^1.1.38",
+        "@nixjs23n6/utilities-adapter": "^1.1.39",
         "@types/lodash-es": "^4.17.6",
         "lodash-es": "^4.17.21"
     }

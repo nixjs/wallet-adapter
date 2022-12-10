@@ -11,7 +11,15 @@ import {
     HexString,
 } from '@nixjs23n6/utilities-adapter'
 import { Aptos as AptosAsset } from '@nixjs23n6/asset-adapter'
-import { AptosClient, AptosAccount, TxnBuilderTypes, Types as AptosTypes, TokenClient } from 'aptos'
+import {
+    AptosClient,
+    AptosAccount,
+    TxnBuilderTypes,
+    Types as AptosTypes,
+    TokenClient,
+    TransactionBuilderABI,
+    HexString as AptosHexString,
+} from 'aptos'
 import { RateLimit } from 'async-sema'
 import { uniqBy } from 'lodash-es'
 import { BaseProvider } from '../base'
@@ -385,6 +393,7 @@ export class AptosTransaction extends BaseProvider {
                         transactionFee: gas_used,
                         expirationTimestamp: expiration_timestamp_secs,
                         rawData: rawTxn,
+                        transactionType: 'transfer',
                     }
                 }
             }
@@ -443,7 +452,8 @@ export class AptosTransaction extends BaseProvider {
                 chainId,
                 from: owner,
                 to: '',
-            } as Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>
+                transactionType: 'script',
+            } as TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction
         } catch (error) {
             console.log('[registerAsset]', error)
             return null
@@ -454,6 +464,7 @@ export class AptosTransaction extends BaseProvider {
         chainId: string,
         rawTxn: any,
         owner: VaultTypes.AccountObject,
+        type: 'transfer' | 'script',
         gasLimit?: string,
         gasPrice?: string
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
@@ -475,6 +486,7 @@ export class AptosTransaction extends BaseProvider {
                     gasLimit: simulateTxn[0].max_gas_amount,
                     rawData: rawTxn,
                     expirationTimestamp: simulateTxn[0].expiration_timestamp_secs,
+                    transactionType: type,
                 }
             }
             return null
@@ -513,16 +525,34 @@ export class AptosTransaction extends BaseProvider {
             return false
         }
     }
-    async allowReceiveNFT(chainId: string, owner: VaultTypes.AccountObject): Promise<boolean> {
+    async allowReceiveNFT(
+        chainId: string,
+        owner: VaultTypes.AccountObject,
+        allow: boolean
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
         try {
+            if (!owner.address) return null
             const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
-            const account = AptosAccount.fromAptosAccountObject(owner)
-            const tokenClient = new TokenClient(client)
-            const txnHash: string = await tokenClient.optInTokenTransfer(account, true)
-            return !!txnHash
+            const transactionBuilder = new TransactionBuilderABI(AptosUtil.COIN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
+            const payload = transactionBuilder.buildTransactionPayload('0x3::token::opt_in_direct_transfer', [], [allow])
+            const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(owner.address), payload)
+
+            const fromPrivateKey = new HexString(owner.privateKeyHex)
+            const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array())
+            const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
+            return {
+                rawData: rawTxn,
+                gasLimit: simulateTxn?.[0].max_gas_amount,
+                gasPrice: simulateTxn?.[0].gas_unit_price,
+                transactionFee: simulateTxn?.[0].gas_used,
+                from: owner,
+                to: '',
+                chainId,
+                transactionType: 'script',
+            } as TransactionTypes.SimulateTransaction
         } catch (error) {
             console.log('[allowReceiveNFT]', error)
-            return false
+            return null
         }
     }
 }

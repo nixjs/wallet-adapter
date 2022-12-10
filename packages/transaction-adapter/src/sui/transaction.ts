@@ -177,4 +177,11 @@ export class SUITransaction extends BaseProvider {
             return null
         }
     }
+
+    async checkReceiveNFTStatus(chainId: string, address: string): Promise<boolean> {
+        return true
+    }
+    async allowReceiveNFT(chainId: string, owner: VaultTypes.AccountObject): Promise<boolean> {
+        return true
+    }
 }

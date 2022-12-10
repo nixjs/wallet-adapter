@@ -11,7 +11,7 @@ import {
     HexString,
 } from '@nixjs23n6/utilities-adapter'
 import { Aptos as AptosAsset } from '@nixjs23n6/asset-adapter'
-import { AptosClient, AptosAccount, TxnBuilderTypes, Types as AptosTypes } from 'aptos'
+import { AptosClient, AptosAccount, TxnBuilderTypes, Types as AptosTypes, TokenClient } from 'aptos'
 import { RateLimit } from 'async-sema'
 import { uniqBy } from 'lodash-es'
 import { BaseProvider } from '../base'
@@ -494,6 +494,35 @@ export class AptosTransaction extends BaseProvider {
         } catch (error) {
             console.log('[simulateTransaction]', error)
             return null
+        }
+    }
+
+    async checkReceiveNFTStatus(chainId: string, address: string): Promise<boolean> {
+        try {
+            const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
+            let status = false
+            if (nodeURL && address) {
+                const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, address)
+                if (resources.status === 'SUCCESS' && resources.data && resources.data.length > 0) {
+                    status = (resources.data.find((n) => n.type === AptosUtil.AptosTokenStore)?.data as any)?.direct_transfer
+                }
+            }
+            return status
+        } catch (error) {
+            console.log('[checkReceiveNFTStatus]', error)
+            return false
+        }
+    }
+    async allowReceiveNFT(chainId: string, owner: VaultTypes.AccountObject): Promise<boolean> {
+        try {
+            const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
+            const account = AptosAccount.fromAptosAccountObject(owner)
+            const tokenClient = new TokenClient(client)
+            const txnHash: string = await tokenClient.optInTokenTransfer(account, true)
+            return !!txnHash
+        } catch (error) {
+            console.log('[allowReceiveNFT]', error)
+            return false
         }
     }
 }

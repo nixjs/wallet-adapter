@@ -533,7 +533,7 @@ export class AptosTransaction extends BaseProvider {
         try {
             if (!owner.address) return null
             const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
-            const transactionBuilder = new TransactionBuilderABI(AptosUtil.COIN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
+            const transactionBuilder = new TransactionBuilderABI(AptosUtil.TOKEN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
             const payload = transactionBuilder.buildTransactionPayload('0x3::token::opt_in_direct_transfer', [], [allow])
             const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(owner.address), payload)
 

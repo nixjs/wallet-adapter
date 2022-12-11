@@ -201,6 +201,7 @@ export class AptosAsset extends BaseProvider {
             url: AptosUtil.BaseIconURL,
             name: 'Aptos',
             symbol: 'APT',
+            coingeckoId: 'aptos',
         }
     }
     async getAssetVerified(chainId: string): Promise<AssetTypes.Asset[]> {

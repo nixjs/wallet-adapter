@@ -533,7 +533,6 @@ export class TxProvider {
                 })
 
                 const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
-                console.log(simulateTxn && simulateTxn.status.status === 'success')
                 if (simulateTxn && simulateTxn.status.status === 'success') {
                     return {
                         rawData: data,
@@ -660,7 +659,7 @@ export async function executeTransaction(
         const txn = await signer.signAndExecuteTransaction(data, requestType)
         return txn
     } catch (error) {
-        console.log(error)
+        console.log('[executeTransaction]', error)
         return null
     }
 }

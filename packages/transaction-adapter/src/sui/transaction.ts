@@ -87,7 +87,7 @@ export class SUITransaction extends BaseProvider {
             }
             return result
         } catch (error) {
-            console.log(error)
+            console.log('[transferCoin]', error)
             return null
         }
     }

@@ -152,7 +152,7 @@ export class QueryProvider {
         const effects = await this.provider.getTransactionWithEffectsBatch(digests)
         const results = []
 
-        const limit = RateLimit(30) // rps
+        const limit = RateLimit(50) // rps
         for (const effect of effects) {
             const data = getTransactionData(effect.certificate)
             await limit()
@@ -533,6 +533,7 @@ export class TxProvider {
                 })
 
                 const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
+                console.log(simulateTxn && simulateTxn.status.status === 'success')
                 if (simulateTxn && simulateTxn.status.status === 'success') {
                     return {
                         rawData: data,

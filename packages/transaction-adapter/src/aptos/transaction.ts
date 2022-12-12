@@ -198,11 +198,8 @@ export class AptosTransaction extends BaseProvider {
                 let v = ''
                 if (mTxn.payload.type_arguments?.[0]) {
                     const t = mTxn.payload.type_arguments?.[0]
-                    if (t.includes(AptosUtil.BaseCoinStore)) {
-                        v = AptosAsset.AptosApiRequest.getCoinAddressType(t) || ''
-                    }
+                    v = AptosAsset.AptosApiRequest.getCoinAddressType(t) || ''
                 }
-
                 txObj = {
                     assetId: v.length > 0 ? v.split('::')?.[2] : 'Unknown',
                 } as TransactionTypes.RegisterAssetObject
@@ -219,7 +216,7 @@ export class AptosTransaction extends BaseProvider {
                 to: to,
                 gasFee: mTxn.gas_used,
                 hash: mTxn.hash,
-                timestamp: mTxn.timestamp,
+                timestamp: Math.floor(mTxn.timestamp / 1000000),
                 status: mTxn.success ? TransactionEnums.TransactionStatus.SUCCESS : TransactionEnums.TransactionStatus.FAILED,
                 type: txType,
                 data: txObj,
@@ -288,9 +285,7 @@ export class AptosTransaction extends BaseProvider {
                 let v = ''
                 if (txn.payload.type_arguments?.[0]) {
                     const t = txn.payload.type_arguments?.[0]
-                    if (t.includes(AptosUtil.BaseCoinStore)) {
-                        v = AptosAsset.AptosApiRequest.getCoinAddressType(t) || ''
-                    }
+                    v = AptosAsset.AptosApiRequest.getCoinAddressType(t) || ''
                 }
 
                 txObj = {
@@ -308,7 +303,7 @@ export class AptosTransaction extends BaseProvider {
                 to: to,
                 gasFee: txn.gas_used,
                 hash: txn.hash,
-                timestamp: txn.timestamp,
+                timestamp: Math.floor(txn.timestamp / 1000000),
                 status: txn.success ? TransactionEnums.TransactionStatus.SUCCESS : TransactionEnums.TransactionStatus.FAILED,
                 type: txType,
                 data: txObj,

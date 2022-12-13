@@ -11,6 +11,7 @@ import {
     HexString,
 } from '@nixjs23n6/utilities-adapter'
 import { Aptos as AptosAsset } from '@nixjs23n6/asset-adapter'
+import { Crypto } from '@nixjs23n6/hd-wallet-adapter'
 import { AptosClient, AptosAccount, TxnBuilderTypes, Types as AptosTypes, TransactionBuilderABI, HexString as AptosHexString } from 'aptos'
 import { RateLimit } from 'async-sema'
 import { uniqBy } from 'lodash-es'
@@ -330,12 +331,13 @@ export class AptosTransaction extends BaseProvider {
         gasPrice?: string
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
         try {
+            if (!from.address || !from.publicKeyHex) throw new Error('Owner info not found')
             let result: Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction> = null
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             const client = new AptosClient(nodeURL)
             const { assetId, decimals } = asset
 
-            const fromPrivateKey = new HexString(from.privateKeyHex)
+            const fromPrivateKey = new HexString(Crypto.mergePrivateKey(from.publicKeyHex, from.privateKeyHex))
             const owner = new AptosAccount(fromPrivateKey.toUint8Array())
 
             const exactTokenName = this.getCoinExactName(assetId)
@@ -416,7 +418,7 @@ export class AptosTransaction extends BaseProvider {
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             const client = new AptosClient(nodeURL)
 
-            const fromPrivateKey = new HexString(owner.privateKeyHex)
+            const fromPrivateKey = new HexString(Crypto.mergePrivateKey(owner.publicKeyHex, owner.privateKeyHex))
             const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array())
 
             const params = {
@@ -456,10 +458,11 @@ export class AptosTransaction extends BaseProvider {
         gasPrice?: string
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
         try {
+            if (!owner.address || !owner.publicKeyHex) throw new Error('Owner not found')
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             const client = new AptosClient(nodeURL)
 
-            const fromPrivateKey = new HexString(owner.privateKeyHex)
+            const fromPrivateKey = new HexString(Crypto.mergePrivateKey(owner.publicKeyHex, owner.privateKeyHex))
             const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array())
 
             const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
@@ -518,13 +521,13 @@ export class AptosTransaction extends BaseProvider {
         allow: boolean
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
         try {
-            if (!owner.address) return null
+            if (!owner.address || !owner.publicKeyHex) throw new Error('Owner not found')
             const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
             const transactionBuilder = new TransactionBuilderABI(AptosUtil.TOKEN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
             const payload = transactionBuilder.buildTransactionPayload('0x3::token::opt_in_direct_transfer', [], [allow])
             const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(owner.address), payload)
 
-            const fromPrivateKey = new HexString(owner.privateKeyHex)
+            const fromPrivateKey = new HexString(Crypto.mergePrivateKey(owner.publicKeyHex, owner.privateKeyHex))
             const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array())
             const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
             return {

@@ -23,8 +23,8 @@ import {
     TransactionEffects,
 } from '@mysten/sui.js'
 import { Types } from '@nixjs23n6/types'
-import { SUI } from '@nixjs23n6/hd-wallet-adapter'
-import { SUIUtil, TransactionTypes, TransactionEnums, HexString, VaultTypes } from '@nixjs23n6/utilities-adapter'
+import { SUI, Crypto } from '@nixjs23n6/hd-wallet-adapter'
+import { SUIUtil, TransactionTypes, TransactionEnums, HexString, VaultTypes, Helper } from '@nixjs23n6/utilities-adapter'
 import { RateLimit } from 'async-sema'
 
 export const SUI_SYSTEM_STATE_OBJECT_ID = '0x0000000000000000000000000000000000000005'
@@ -580,7 +580,7 @@ export class TxProvider {
                 })
                 const keypair = new Ed25519Keypair({
                     publicKey: new HexString(from.publicKeyHex).toUint8Array(),
-                    secretKey: new HexString(from.privateKeyHex).toUint8Array(),
+                    secretKey: new HexString(Crypto.mergePrivateKey(from.publicKeyHex, from.privateKeyHex)).toUint8Array(),
                 })
                 const signer = new RawSigner(keypair, this.provider)
                 await signer.signAndExecuteTransaction(data)
@@ -654,7 +654,7 @@ export async function executeTransaction(
         if (!owner.address || !owner.publicKeyHex) throw new Error('Owner info not found')
         const keypair = new Ed25519Keypair({
             publicKey: new HexString(owner.publicKeyHex).toUint8Array(),
-            secretKey: new HexString(owner.privateKeyHex).toUint8Array(),
+            secretKey: new HexString(Crypto.mergePrivateKey(owner.publicKeyHex, owner.privateKeyHex)).toUint8Array(),
         })
         const signer = new RawSigner(keypair, provider)
         const txn = await signer.signAndExecuteTransaction(data, requestType)

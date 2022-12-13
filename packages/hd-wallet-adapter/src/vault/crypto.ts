@@ -9,20 +9,9 @@ export namespace Crypto {
         return parseFloat(derivationPath.split('/')[3])
     }
 
-    export function mergePrivateKey(publicKey: string | HexString, privateKey: string | HexString) {
-        let pubKey = ''
-        if (HexString.ensure(publicKey)) {
-            pubKey = (publicKey as HexString).noPrefix()
-        } else {
-            pubKey = new HexString(publicKey as string).noPrefix()
-        }
-
-        let priKey = ''
-        if (HexString.ensure(privateKey)) {
-            priKey = (privateKey as HexString).noPrefix()
-        } else {
-            priKey = new HexString(privateKey as string).noPrefix()
-        }
+    export function mergePrivateKey(publicKey: string, privateKey: string) {
+        const pubKey = new HexString(publicKey).noPrefix()
+        const priKey = new HexString(privateKey).noPrefix()
         return `0x${priKey}${pubKey}`
     }
 }

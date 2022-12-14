@@ -19,7 +19,7 @@ export abstract class BaseProvider {
         chainId: string,
         asset: AssetTypes.Asset,
         owner: VaultTypes.AccountObject
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction<any>>>
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>>
 
     abstract simulateTransaction(
         chainId: string,
@@ -36,4 +36,13 @@ export abstract class BaseProvider {
         owner: VaultTypes.AccountObject,
         allow: boolean
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction>>
+    abstract transferNFT(
+        chainId: string,
+        NFT: AssetTypes.NFT,
+        amount: string,
+        from: VaultTypes.AccountObject,
+        to: string,
+        gasLimit?: string | undefined,
+        gasPrice?: string | undefined
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferNFTTransaction>>
 }

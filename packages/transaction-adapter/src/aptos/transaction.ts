@@ -412,7 +412,7 @@ export class AptosTransaction extends BaseProvider {
         chainId: string,
         asset: AssetTypes.Asset,
         owner: VaultTypes.AccountObject
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction<any>>> {
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>> {
         try {
             if (!owner.address || !owner.publicKeyHex) throw new Error('Owner not found')
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
@@ -525,7 +525,9 @@ export class AptosTransaction extends BaseProvider {
             const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
             const transactionBuilder = new TransactionBuilderABI(AptosUtil.TOKEN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
             const payload = transactionBuilder.buildTransactionPayload('0x3::token::opt_in_direct_transfer', [], [allow])
-            const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(owner.address), payload)
+            const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(owner.address), payload, {
+                expireTimestamp: BigInt(100),
+            })
 
             const fromPrivateKey = new HexString(Crypto.mergePrivateKey(owner.publicKeyHex, owner.privateKeyHex))
             const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array())
@@ -542,6 +544,57 @@ export class AptosTransaction extends BaseProvider {
             } as TransactionTypes.SimulateTransaction
         } catch (error) {
             console.log('[allowReceiveNFT]', error)
+            return null
+        }
+    }
+    async transferNFT(
+        chainId: string,
+        NFT: AssetTypes.NFT,
+        amount: string,
+        from: VaultTypes.AccountObject,
+        to: string,
+        gasLimit?: string | undefined,
+        gasPrice?: string | undefined
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any> & TransactionTypes.RawTransferNFTTransaction>> {
+        try {
+            if (!from.address || !from.publicKeyHex) throw new Error('Owner not found')
+            if (NFT.creator.length === 0) throw new Error('NFT creator not found')
+            const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
+
+            const transactionBuilder = new TransactionBuilderABI(AptosUtil.TOKEN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
+
+            const { id, name, collection } = NFT
+            const payload = transactionBuilder.buildTransactionPayload(
+                '0x3::token_transfers::offer_script',
+                [],
+                [to, NFT.creator, collection, name, 0, amount]
+            )
+            const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(from.address), payload, {
+                gasUnitPrice: gasPrice ? BigInt(gasPrice) : undefined,
+                maxGasAmount: gasLimit ? BigInt(gasLimit) : undefined,
+                expireTimestamp: BigInt(100),
+            })
+
+            const fromPrivateKey = new HexString(Crypto.mergePrivateKey(from.publicKeyHex, from.privateKeyHex))
+            const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array())
+            const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
+            if (simulateTxn.length > 0) {
+                return {
+                    amount,
+                    asset: NFT,
+                    from,
+                    to,
+                    chainId,
+                    gasLimit: simulateTxn[0].max_gas_amount,
+                    gasPrice: simulateTxn[0].gas_unit_price,
+                    transactionFee: simulateTxn[0].gas_used,
+                    rawData: rawTxn,
+                    transactionType: 'transfer-nft',
+                }
+            }
+            return null
+        } catch (error) {
+            console.log('[transferNFT]', error)
             return null
         }
     }

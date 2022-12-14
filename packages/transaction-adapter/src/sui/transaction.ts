@@ -36,7 +36,7 @@ export class SUITransaction extends BaseProvider {
         chainId: string,
         asset: AssetTypes.Asset,
         owner: VaultTypes.AccountObject
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction<any>>> {
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>> {
         try {
             let result: Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction> = null
             result = {
@@ -190,5 +190,39 @@ export class SUITransaction extends BaseProvider {
         allow: boolean
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
         return null
+    }
+    async transferNFT(
+        chainId: string,
+        NFT: AssetTypes.NFT,
+        amount: string,
+        from: VaultTypes.AccountObject,
+        to: string,
+        gasLimit?: string | undefined,
+        gasPrice?: string | undefined
+    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any> & TransactionTypes.RawTransferNFTTransaction>> {
+        try {
+            let result: Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferNFTTransaction> = null
+            const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
+            if (from && from.publicKeyHex) {
+                const rawData = await provider.transferObject(NFT.id, to, from, Number(gasLimit))
+                if (rawData)
+                    result = {
+                        amount,
+                        asset: NFT,
+                        from,
+                        to,
+                        chainId,
+                        gasLimit: rawData.gasLimit,
+                        gasPrice,
+                        transactionFee: rawData.transactionFee,
+                        rawData: rawData.rawData,
+                        transactionType: 'transfer-nft',
+                    }
+            }
+            return result
+        } catch (error) {
+            console.log('[transferNFT]', error)
+            return null
+        }
     }
 }

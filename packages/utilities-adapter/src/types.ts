@@ -29,6 +29,7 @@ export namespace AssetTypes {
     export interface NFT {
         id: string
         collection: string
+        creator: string
         name: string
         description: string
         uri: string
@@ -106,16 +107,17 @@ export namespace TransactionTypes {
         gasLimit?: string
         gasPrice?: string
         expirationTimestamp?: string
-        transactionType: 'transfer' | 'script'
+        transactionType: 'transfer' | 'script' | 'transfer-nft'
     }
     export interface RawTransferTransaction {
         amount: string
         asset: AssetTypes.Asset
-        from: VaultTypes.AccountObject
-        expirationTimestamp?: string
     }
-    export interface RegisterAssetTransaction<T = any> {
-        rawData?: T
+    export interface RawTransferNFTTransaction {
+        amount: string
+        asset: AssetTypes.NFT
+    }
+    export interface RegisterAssetTransaction {
         asset: AssetTypes.Asset
         type: 'gas' | 'none'
     }

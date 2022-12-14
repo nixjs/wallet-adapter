@@ -181,6 +181,7 @@ export class AptosAsset extends BaseProvider {
                                         name,
                                         description,
                                         uri,
+                                        creator: data.creator,
                                     } as AssetTypes.NFT)
                                 }
                             }

@@ -41,7 +41,8 @@ export class Provider {
         symbol: string,
         amount: number,
         from: VaultTypes.AccountObject,
-        to: string
+        to: string,
+        gasLimit?: number
     ): Promise<
         Types.Nullable<{
             rawData: Base64DataBuffer
@@ -49,27 +50,37 @@ export class Provider {
             transactionFee: string
         }>
     > {
-        if (from.address) {
-            const coins = (await this.query.getOwnedCoins(from.address)).filter((coin) => coin.symbol === symbol)
-            if (coins.length === 0) {
-                throw new Error('No coin to transfer')
-            }
-
-            if (symbol === GAS_SYMBOL) {
-                return await this.tx.transferSui(coins, amount, from, to)
-            } else {
-                return await this.tx.transferCoin(coins, amount, from, to)
-            }
+        if (!from.address) throw new Error('Owner info not found')
+        const coins = (await this.query.getOwnedCoins(from.address)).filter((coin) => coin.symbol === symbol)
+        if (coins.length === 0) {
+            throw new Error('No coin to transfer')
         }
-        return null
+
+        if (symbol === GAS_SYMBOL) {
+            return await this.tx.transferSui(coins, amount, from, to, gasLimit)
+        } else {
+            return await this.tx.transferCoin(coins, amount, from, to, gasLimit)
+        }
     }
 
-    async transferObject(objectId: string, recipient: string, vault: SUI.SUIVault) {
-        const object = (await this.query.getOwnedObjects(vault.address())).find((object) => object.reference.objectId === objectId)
+    async transferObject(
+        objectId: string,
+        recipient: string,
+        from: VaultTypes.AccountObject,
+        gasLimit?: number
+    ): Promise<
+        Types.Nullable<{
+            rawData: Base64DataBuffer
+            gasLimit: string
+            transactionFee: string
+        }>
+    > {
+        if (!from.address) throw new Error('Owner info not found')
+        const object = (await this.query.getOwnedObjects(from.address)).find((object) => object.reference.objectId === objectId)
         if (!object) {
             throw new Error('No object to transfer')
         }
-        await this.tx.transferObject(objectId, recipient, vault)
+        return await this.tx.transferObject(objectId, recipient, from, gasLimit)
     }
 
     // async mintExampleNft(vault: SUI.SUIVault) {
@@ -383,27 +394,11 @@ export class TxProvider {
         this.serializer = new LocalTxnDataSerializer(this.provider)
     }
 
-    async transferObject(objectId: string, recipient: string, vault: SUI.SUIVault) {
-        const data = await this.serializer.serializeToBytes(vault.address(), {
-            kind: 'transferObject',
-            data: {
-                gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER,
-                objectId,
-                recipient,
-            },
-        })
-        const signedTx = await vault.signTransaction({
-            data: HexString.fromUint8Array(data.getData()),
-        })
-        // TODO: handle response
-        // await executeTransaction(this.provider, signedTx)
-    }
-
-    public async transferCoin(
-        coins: SUIUtil.CoinObject[],
-        amount: number,
+    async transferObject(
+        objectId: string,
+        recipient: string,
         from: VaultTypes.AccountObject,
-        to: string
+        gasLimit?: number
     ): Promise<
         Types.Nullable<{
             rawData: Base64DataBuffer
@@ -412,7 +407,50 @@ export class TxProvider {
         }>
     > {
         try {
-            if (!from.address || !from.publicKeyHex) throw new Error('Sender info not found')
+            if (!from.address) throw new Error('Owner info not found')
+            const data = await this.serializer.serializeToBytes(from.address, {
+                kind: 'transferObject',
+                data: {
+                    gasBudget: gasLimit || DEFAULT_GAS_BUDGET_FOR_TRANSFER,
+                    objectId,
+                    recipient,
+                },
+            })
+            const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
+            if (simulateTxn && simulateTxn.status.status === 'success') {
+                return {
+                    rawData: data,
+                    gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
+                    transactionFee: String(
+                        simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
+                    ),
+                }
+            }
+            return {
+                rawData: data,
+                gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
+                transactionFee: '',
+            }
+        } catch (error) {
+            return null
+        }
+    }
+
+    public async transferCoin(
+        coins: SUIUtil.CoinObject[],
+        amount: number,
+        from: VaultTypes.AccountObject,
+        to: string,
+        gasLimit?: number
+    ): Promise<
+        Types.Nullable<{
+            rawData: Base64DataBuffer
+            gasLimit: string
+            transactionFee: string
+        }>
+    > {
+        try {
+            if (!from.address || !from.publicKeyHex) throw new Error('Owner info not found')
             const objects = coins.map((coin) => coin.object)
             const inputCoins = await CoinAPI.selectCoinSetWithCombinedBalanceGreaterThanOrEqual(objects, BigInt(amount))
             if (inputCoins.length === 0) {
@@ -423,7 +461,7 @@ export class TxProvider {
                 )
             }
             const inputCoinIDs = inputCoins.map((c) => CoinAPI.getID(c))
-            const gasBudget = SUIUtil.Coin.estimatedGasCostForPay(inputCoins.length)
+            const gasBudget = gasLimit || SUIUtil.Coin.estimatedGasCostForPay(inputCoins.length)
             const data = await this.serializer.serializeToBytes(from.address, {
                 data: {
                     inputCoins: inputCoinIDs,
@@ -433,6 +471,16 @@ export class TxProvider {
                 },
                 kind: 'pay',
             })
+            const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
+            if (simulateTxn && simulateTxn.status.status === 'success') {
+                return {
+                    rawData: data,
+                    gasLimit: String(gasBudget),
+                    transactionFee: String(
+                        simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
+                    ),
+                }
+            }
             return {
                 rawData: data,
                 gasLimit: String(gasBudget),
@@ -508,7 +556,8 @@ export class TxProvider {
         coins: SUIUtil.CoinObject[],
         amount: number,
         from: VaultTypes.AccountObject,
-        to: string
+        to: string,
+        gasLimit?: number
     ): Promise<
         Types.Nullable<{
             rawData: Base64DataBuffer
@@ -517,8 +566,10 @@ export class TxProvider {
         }>
     > {
         try {
+            let gasBudget = DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI
+            if (gasLimit) gasBudget = gasLimit
             if (!from.address || !from.publicKeyHex) throw new Error('Owner info not found')
-            const actualAmount = BigInt(amount + DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI)
+            const actualAmount = BigInt(amount + gasBudget)
             const objects = coins.map((coin) => coin.object)
             const coinsWithSufficientAmount = await CoinAPI.selectCoinsWithBalanceGreaterThanOrEqual(objects, actualAmount)
             if (coinsWithSufficientAmount.length > 0) {
@@ -526,18 +577,17 @@ export class TxProvider {
                     kind: 'transferSui',
                     data: {
                         amount: amount,
-                        gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI,
+                        gasBudget: gasBudget,
                         recipient: to,
                         suiObjectId: CoinAPI.getID(coinsWithSufficientAmount[0]),
                     },
                 })
 
                 const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
-                console.log(simulateTxn && simulateTxn.status.status === 'success')
                 if (simulateTxn && simulateTxn.status.status === 'success') {
                     return {
                         rawData: data,
-                        gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
+                        gasLimit: String(gasBudget),
                         transactionFee: String(
                             simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
                         ),
@@ -545,7 +595,7 @@ export class TxProvider {
                 }
                 return {
                     rawData: data,
-                    gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
+                    gasLimit: String(gasBudget),
                     transactionFee: '',
                 }
             }
@@ -555,16 +605,16 @@ export class TxProvider {
             if (inputCoins.length === coins.length) {
                 // We need to pay for an additional `transferSui` transaction now, assert that we have sufficient balance
                 // to cover the additional cost
-                await SUIUtil.Coin.assertAndGetSufficientCoins(objects, BigInt(amount), gasCostForPay + DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI)
+                await SUIUtil.Coin.assertAndGetSufficientCoins(objects, BigInt(amount), gasCostForPay + gasBudget)
 
                 // Split the gas budget from the coin with largest balance for simplicity. We can also use any coin
-                // that has amount greater than or equal to `DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI * 2`
+                // that has amount greater than or equal to `gasBudget * 2`
                 const coinWithLargestBalance = inputCoins[inputCoins.length - 1]
 
                 if (
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     CoinAPI.getBalance(coinWithLargestBalance)! <
-                    gasCostForPay + DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI
+                    gasCostForPay + gasBudget
                 ) {
                     throw new Error(`None of the coins has sufficient balance to cover gas fee`)
                 }
@@ -573,7 +623,7 @@ export class TxProvider {
                     kind: 'transferSui',
                     data: {
                         suiObjectId: CoinAPI.getID(coinWithLargestBalance),
-                        gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI,
+                        gasBudget: gasBudget,
                         recipient: to,
                         amount: gasCostForPay,
                     },

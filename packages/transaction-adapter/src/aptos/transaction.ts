@@ -21,7 +21,7 @@ import {
     HexString as AptosHexString,
     OptionalTransactionArgs,
 } from 'aptos'
-import { RateLimit } from 'async-sema'
+import { RateLimit } from '@nixjs23n6/async-sema'
 import { uniqBy } from 'lodash-es'
 import { BaseProvider } from '../base'
 

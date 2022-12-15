@@ -10,7 +10,7 @@ import {
     getPayTransaction,
     getMoveObject,
 } from '@mysten/sui.js'
-import { RateLimit } from 'async-sema'
+import { RateLimit } from '@nixjs23n6/async-sema'
 import { Coin, Nft } from './object'
 import { TransactionTypes } from '../types'
 import { TransactionEnums } from '../enums'

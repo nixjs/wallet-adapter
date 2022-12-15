@@ -1,6 +1,6 @@
 import { Interfaces, Types } from '@nixjs23n6/types'
 import { ProviderEnums, AptosUtil, Helper, AssetTypes } from '@nixjs23n6/utilities-adapter'
-import { RateLimit } from 'async-sema'
+import { RateLimit } from '@nixjs23n6/async-sema'
 import { AptosClient, TokenClient, Types as AptosTypes, TokenTypes } from 'aptos'
 import { AptosApiRequest } from './api'
 import { DefaultAsset, DefaultAssetBalance } from './const'

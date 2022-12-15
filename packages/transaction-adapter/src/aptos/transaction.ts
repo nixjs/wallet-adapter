@@ -12,7 +12,15 @@ import {
 } from '@nixjs23n6/utilities-adapter'
 import { Aptos as AptosAsset } from '@nixjs23n6/asset-adapter'
 import { Crypto } from '@nixjs23n6/hd-wallet-adapter'
-import { AptosClient, AptosAccount, TxnBuilderTypes, Types as AptosTypes, TransactionBuilderABI, HexString as AptosHexString } from 'aptos'
+import {
+    AptosClient,
+    AptosAccount,
+    TxnBuilderTypes,
+    Types as AptosTypes,
+    TransactionBuilderABI,
+    HexString as AptosHexString,
+    OptionalTransactionArgs,
+} from 'aptos'
 import { RateLimit } from 'async-sema'
 import { uniqBy } from 'lodash-es'
 import { BaseProvider } from '../base'
@@ -563,16 +571,17 @@ export class AptosTransaction extends BaseProvider {
 
             const transactionBuilder = new TransactionBuilderABI(AptosUtil.TOKEN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
 
-            const { id, name, collection } = NFT
+            const { name, collection } = NFT
             const payload = transactionBuilder.buildTransactionPayload(
                 '0x3::token_transfers::offer_script',
                 [],
                 [to, NFT.creator, collection, name, 0, amount]
             )
+
             const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(from.address), payload, {
-                gasUnitPrice: gasPrice ? BigInt(gasPrice) : undefined,
-                maxGasAmount: gasLimit ? BigInt(gasLimit) : undefined,
-                expireTimestamp: BigInt(100),
+                gasUnitPrice: BigInt(gasPrice || AptosUtil.BaseGasPrice),
+                maxGasAmount: BigInt(gasLimit || AptosUtil.BaseMaxGasAmount),
+                expireTimestamp: BigInt(Math.floor(Date.now() / 1e3) + AptosUtil.BaseExpireTimestamp),
             })
 
             const fromPrivateKey = new HexString(Crypto.mergePrivateKey(from.publicKeyHex, from.privateKeyHex))
@@ -589,6 +598,7 @@ export class AptosTransaction extends BaseProvider {
                     gasPrice: simulateTxn[0].gas_unit_price,
                     transactionFee: simulateTxn[0].gas_used,
                     rawData: rawTxn,
+                    expirationTimestamp: simulateTxn[0].expiration_timestamp_secs,
                     transactionType: 'transfer-nft',
                 }
             }

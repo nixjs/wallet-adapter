@@ -315,6 +315,8 @@ export namespace AptosApiRequest {
         // TS SDK support 3 types of transaction payloads: `EntryFunction`, `Script` and `Module`.
         // See https://aptos-labs.github.io/ts-sdk-doc/ for the details.
         const [{ sequence_number: sequenceNumber }, chainId] = await Promise.all([client.getAccount(owner.address()), client.getChainId()])
+        let timestamp = BaseExpireTimestamp
+        if (expireTimestamp) timestamp = expireTimestamp
         const rawTxn = new RawTransaction(
             AccountAddress.fromHex(owner.address()),
             BigInt(sequenceNumber),
@@ -324,7 +326,7 @@ export namespace AptosApiRequest {
             // Gas price per unit
             BigInt(gasUnitPrice),
             // Expiration timestamp. Transaction is discarded if it is not executed within ${expireTimestamp} seconds from now.
-            BigInt(secondFromNow(BaseExpireTimestamp, expireTimestamp)),
+            BigInt(Math.floor(Date.now() / 1e3) + timestamp),
             new ChainId(chainId)
         )
         return rawTxn

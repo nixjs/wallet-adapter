@@ -491,67 +491,6 @@ export class TxProvider {
         }
     }
 
-    // public async transferSui(coins: SUIUtil.CoinObject[], amount: number, recipient: string, vault: SUI.SUIVault) {
-    //     const address = vault.address()
-    //     const actualAmount = BigInt(amount + DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI)
-    //     const objects = coins.map((coin) => coin.object)
-    //     const coinsWithSufficientAmount = await CoinAPI.selectCoinsWithBalanceGreaterThanOrEqual(objects, actualAmount)
-    //     if (coinsWithSufficientAmount.length > 0) {
-    //         const data = await this.serializer.newTransferSui(address, {
-    //             suiObjectId: CoinAPI.getID(coinsWithSufficientAmount[0]),
-    //             gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI,
-    //             recipient,
-    //             amount: Number(amount),
-    //         })
-    //         const signedTx = await vault.signTransaction({ data: HexString.fromUint8Array(data.getData()) })
-    //         // TODO: handle response
-    //         await executeTransaction(this.provider, signedTx)
-    //         return
-    //     }
-    //     // If there is not a coin with sufficient balance, use the pay API
-    //     const gasCostForPay = SUIUtil.Coin.estimatedGasCostForPay(coins.length)
-    //     let inputCoins = await SUIUtil.Coin.assertAndGetSufficientCoins(objects, BigInt(amount), gasCostForPay)
-
-    //     if (inputCoins.length === coins.length) {
-    //         // We need to pay for an additional `transferSui` transaction now, assert that we have sufficient balance
-    //         // to cover the additional cost
-    //         await SUIUtil.Coin.assertAndGetSufficientCoins(objects, BigInt(amount), gasCostForPay + DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI)
-
-    //         // Split the gas budget from the coin with largest balance for simplicity. We can also use any coin
-    //         // that has amount greater than or equal to `DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI * 2`
-    //         const coinWithLargestBalance = inputCoins[inputCoins.length - 1]
-
-    //         if (
-    //             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //             CoinAPI.getBalance(coinWithLargestBalance)! <
-    //             gasCostForPay + DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI
-    //         ) {
-    //             throw new Error(`None of the coins has sufficient balance to cover gas fee`)
-    //         }
-
-    //         const data = await this.serializer.newTransferSui(address, {
-    //             suiObjectId: CoinAPI.getID(coinWithLargestBalance),
-    //             gasBudget: DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI,
-    //             recipient,
-    //             amount: gasCostForPay,
-    //         })
-    //         const signedTx = await vault.signTransaction({ data: HexString.fromUint8Array(data.getData()) })
-    //         // TODO: handle response
-    //         await executeTransaction(this.provider, signedTx)
-
-    //         inputCoins = await this.provider.selectCoinSetWithCombinedBalanceGreaterThanOrEqual(address, BigInt(amount), SUI_TYPE_ARG, [])
-    //     }
-    //     const data = await this.serializer.newPay(address, {
-    //         inputCoins: inputCoins.map((c) => CoinAPI.getID(c)),
-    //         recipients: [recipient],
-    //         amounts: [Number(amount)],
-    //         gasBudget: gasCostForPay,
-    //     })
-    //     const signedTx = await vault.signTransaction({ data: HexString.fromUint8Array(data.getData()) })
-    //     // TODO: handle response
-    //     await executeTransaction(this.provider, signedTx)
-    // }
-
     public async transferSui(
         coins: SUIUtil.CoinObject[],
         amount: number,
@@ -669,29 +608,6 @@ export class TxProvider {
             return null
         }
     }
-
-    // public async executeMoveCall(tx: MoveCallTransaction, vault: SUI.SUIVault, gasObjectId: string | undefined) {
-    //     const address = vault.address()
-    //     if (!tx.gasPayment) {
-    //         tx.gasPayment = gasObjectId
-    //     }
-    //     const data = await this.serializer.newMoveCall(address, tx)
-    //     const signedTx = await vault.signTransaction({ data: HexString.fromUint8Array(data.getData()) })
-    //     // TODO: handle response
-    //     return await executeTransaction(this.provider, signedTx)
-    // }
-
-    // public async executeSerializedMoveCall(txBytes: Uint8Array, vault: SUI.SUIVault) {
-    //     const signedTx = await vault.signTransaction({
-    //         data: HexString.fromUint8Array(txBytes),
-    //     })
-    //     // TODO: handle response
-    //     await executeTransaction(this.provider, signedTx)
-    // }
-
-    // public async mintExampleNft(vault: SUI.SUIVault, gasObjectId: string | undefined) {
-    //     await this.executeMoveCall(MINT_EXAMPLE_NFT_MOVE_CALL, vault, gasObjectId)
-    // }
 }
 
 export async function executeTransaction(

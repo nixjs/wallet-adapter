@@ -225,10 +225,11 @@ export class SUITransaction extends BaseProvider {
             return null
         }
     }
-    async fundAccount(chainId: string, to: string): Promise<boolean> {
+    async fundAccount(chainId: string, to: string, faucetURL: string): Promise<boolean> {
         try {
             const provider = new JsonRpcProvider(SUIUtil.BaseNodeByChainInfo[chainId], {
                 skipDataValidation: true,
+                faucetURL,
             })
             const result = await provider.requestSuiFromFaucet(to)
             if (result.error) return false

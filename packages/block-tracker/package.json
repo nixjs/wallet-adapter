@@ -1,6 +1,6 @@
 {
     "name": "@nixjs23n6/block-tracker",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "description": "A JS module for keeping track of the latest Aptos/SUI/EVM Base block",
     "sideEffects": false,
     "main": "lib/cjs/index.js",

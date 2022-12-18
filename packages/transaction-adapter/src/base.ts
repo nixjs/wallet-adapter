@@ -45,5 +45,5 @@ export abstract class BaseProvider {
         gasLimit?: string | undefined,
         gasPrice?: string | undefined
     ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferNFTTransaction>>
-    abstract fundAccount(chainId: string, to: string, faucetURL?: string): Promise<boolean>
+    abstract fundAccount(chainId: string, to: string, faucetURL: string): Promise<boolean>
 }

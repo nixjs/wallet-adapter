@@ -608,11 +608,10 @@ export class AptosTransaction extends BaseProvider {
             return null
         }
     }
-    async fundAccount(chainId: string, to: string, faucetURL?: string): Promise<boolean> {
+    async fundAccount(chainId: string, to: string, faucetURL: string): Promise<boolean> {
         try {
             if (!faucetURL) throw new Error('Faucet URL not found')
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
-            const client = new AptosClient(nodeURL)
             const faucetClient = new FaucetClient(nodeURL, faucetURL) // <:!:section_1
             const result = await faucetClient.fundAccount(to, 1_000_000_000)
             if (result.length > 0) return true

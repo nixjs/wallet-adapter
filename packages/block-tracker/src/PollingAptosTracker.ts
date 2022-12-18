@@ -1,18 +1,9 @@
 import axios from 'axios'
-import { BaseBlockTracker } from './BaseBlockTracker'
+import { BaseBlockTracker, PollingBlockTrackerOptions, Block } from './BaseBlockTracker'
 
 const sec = 1000
 
-export interface PollingBlockTrackerOptions {
-    address: string
-    nodeURL: string
-    pollingInterval?: number
-    retryTimeout?: number
-    keepEventLoopActive?: boolean
-    blockResetDuration?: number
-}
-
-export class PollingBlockTracker extends BaseBlockTracker {
+export class PollingAptosTracker extends BaseBlockTracker {
     #address: string
     #nodeURL: string
 
@@ -21,6 +12,8 @@ export class PollingBlockTracker extends BaseBlockTracker {
     #retryTimeout: number
 
     #keepEventLoopActive: boolean
+
+    // #setSkipCacheFlag: boolean
 
     constructor(opts: PollingBlockTrackerOptions) {
         // parse + validate args
@@ -38,6 +31,7 @@ export class PollingBlockTracker extends BaseBlockTracker {
         this.#pollingInterval = opts.pollingInterval || 20 * sec
         this.#retryTimeout = opts.retryTimeout || this.#pollingInterval / 10
         this.#keepEventLoopActive = opts.keepEventLoopActive === undefined ? true : opts.keepEventLoopActive
+        // this.#setSkipCacheFlag = opts.setSkipCacheFlag || false
     }
 
     // trigger block polling
@@ -83,10 +77,10 @@ export class PollingBlockTracker extends BaseBlockTracker {
         this._newPotentialLatest(latestBlock)
     }
 
-    private async _fetchLatestBlock(): Promise<string> {
+    private async _fetchLatestBlock(): Promise<Block> {
         const res = await axios.post(`${this.#nodeURL}`, {
-            query: 'query MyQuery($address: String) {\n  move_resources_aggregate(\n    limit: 1\n    order_by: {transaction_version: desc}\n    distinct_on: transaction_version\n    where: {address: {_eq: $address}}\n  ) {\n    nodes {\n      address\n      transaction_version\n    }\n  }\n}\n',
-            operationName: 'MyQuery',
+            query: 'query MoveRequestAggregate($address: String) {\n  move_resources_aggregate(\n    limit: 1\n    order_by: {transaction_version: desc}\n    distinct_on: transaction_version\n    where: {address: {_eq: $address}}\n  ) {\n    nodes {\n      address\n      transaction_version\n    }\n  }\n}\n',
+            operationName: 'MoveRequestAggregate',
             variables: {
                 address: this.#address,
             },
@@ -95,7 +89,11 @@ export class PollingBlockTracker extends BaseBlockTracker {
         const result = res.data
         if ([200, 201].includes(res.status) && result?.data && result.data?.move_resources_aggregate?.nodes?.length > 0) {
             const nodes = result?.data?.move_resources_aggregate?.nodes
-            return nodes[0]?.transaction_version || null
+            if (nodes[0])
+                return {
+                    version: nodes[0]?.transaction_version,
+                    hash: nodes[0]?.transaction_version,
+                }
         }
         throw new Error(`PollingBlockTracker - encountered error fetching block:\n${res.data}`)
     }

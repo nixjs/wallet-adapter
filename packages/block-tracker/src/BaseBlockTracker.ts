@@ -4,9 +4,22 @@ const sec = 1000
 
 const calculateSum = (accumulator: number, currentValue: number) => accumulator + currentValue
 const blockTrackerEvents: (string | symbol)[] = ['sync', 'latest']
-
 interface BaseBlockTrackerArgs {
     blockResetDuration?: number
+}
+
+export interface PollingBlockTrackerOptions {
+    address: string
+    nodeURL: string
+    pollingInterval?: number
+    retryTimeout?: number
+    keepEventLoopActive?: boolean
+    blockResetDuration?: number
+}
+
+export interface Block {
+    hash: string
+    version: string
 }
 
 export abstract class BaseBlockTracker extends SafeEventEmitter {
@@ -14,7 +27,7 @@ export abstract class BaseBlockTracker extends SafeEventEmitter {
 
     private _blockResetDuration: number
 
-    private _currentBlock: string | null
+    private _currentBlock: Block | null
 
     private _blockResetTimeout?: ReturnType<typeof setTimeout>
 
@@ -46,17 +59,17 @@ export abstract class BaseBlockTracker extends SafeEventEmitter {
         return this._isRunning
     }
 
-    getCurrentBlock(): string | null {
+    getCurrentBlock(): Block | null {
         return this._currentBlock
     }
 
-    async getLatestBlock(): Promise<string> {
+    async getLatestBlock(): Promise<Block> {
         // return if available
         if (this._currentBlock) {
             return this._currentBlock
         }
         // wait for a new latest block
-        const latestBlock: string = await new Promise((resolve) => this.once('latest', resolve))
+        const latestBlock: Block = await new Promise((resolve) => this.once('latest', resolve))
         // return newly set current block
         return latestBlock
     }
@@ -98,6 +111,7 @@ export abstract class BaseBlockTracker extends SafeEventEmitter {
     }
 
     private _onNewListener(eventName: string | symbol): void {
+        console.log(eventName)
         // `newListener` is called *before* the listener is added
         if (blockTrackerEvents.includes(eventName)) {
             this._maybeStart()
@@ -137,16 +151,16 @@ export abstract class BaseBlockTracker extends SafeEventEmitter {
         return blockTrackerEvents.map((eventName) => this.listenerCount(eventName)).reduce(calculateSum)
     }
 
-    protected _newPotentialLatest(newBlock: string): void {
+    protected _newPotentialLatest(newBlock: Block): void {
         const currentBlock = this._currentBlock
         // only update if blok number is higher
-        if (currentBlock && hexToInt(newBlock) <= hexToInt(currentBlock)) {
+        if (currentBlock && hexToInt(newBlock.version) <= hexToInt(currentBlock.version)) {
             return
         }
         this._setCurrentBlock(newBlock)
     }
 
-    private _setCurrentBlock(newBlock: string): void {
+    private _setCurrentBlock(newBlock: Block): void {
         const oldBlock = this._currentBlock
         this._currentBlock = newBlock
         this.emit('latest', newBlock)

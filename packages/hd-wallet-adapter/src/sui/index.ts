@@ -1,2 +1,2 @@
-export * from "./hdkey";
-export * from "./vault";
+export * from './hdkey'
+export * from './vault'

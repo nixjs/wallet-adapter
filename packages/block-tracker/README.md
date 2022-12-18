@@ -11,7 +11,7 @@ Assets
 ### Aptos
 
 ```typescript
-import { PollingAptosTracker } from '@nixjs23n6/aptos-block-tracker';
+import { PollingAptosTracker } from '@nixjs23n6/aptos-block-tracker'
 
 const blockTracker = new PollingAptosTracker({
     address: '0xb1ab189ee69f9c4f7e99d3b3595aed20670098367c18d5a65234ce97596feb4e',
@@ -30,7 +30,7 @@ blockTracker.on('sync', ({ newBlock, oldBlock }) => {
 ### SUI
 
 ```typescript
-import { PollingSUITracker } from '@nixjs23n6/aptos-block-tracker';
+import { PollingSUITracker } from '@nixjs23n6/aptos-block-tracker'
 
 const blockTracker = new PollingSUITracker({
     address: '0x1058a41ebe92ff069b65b692e20e51874a431e8b',

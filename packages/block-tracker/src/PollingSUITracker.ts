@@ -137,7 +137,12 @@ export class PollingSUITracker extends BaseBlockTracker {
                     version2 = toResult?.data?.result.timestamp_ms
                 }
             }
-            if (version1 === 0 && version2 === 0) throw new Error(`PollingBlockTracker - encountered error fetching block:\n${res.data}`)
+            if (version1 === 0 && version2 === 0) {
+                return {
+                    version: '0',
+                    hash: null,
+                }
+            }
             if (version1 > version2)
                 return {
                     version: String(version1),

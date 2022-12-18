@@ -87,8 +87,14 @@ export class PollingAptosTracker extends BaseBlockTracker {
         })
 
         const result = res.data
-        if ([200, 201].includes(res.status) && result?.data && result.data?.move_resources_aggregate?.nodes?.length > 0) {
+        if ([200, 201].includes(res.status) && result?.data && result.data?.move_resources_aggregate) {
             const nodes = result?.data?.move_resources_aggregate?.nodes
+            if (nodes.length === 0) {
+                return {
+                    version: '0',
+                    hash: null,
+                }
+            }
             if (nodes[0])
                 return {
                     version: nodes[0]?.transaction_version,

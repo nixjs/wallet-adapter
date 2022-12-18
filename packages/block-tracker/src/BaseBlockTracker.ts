@@ -18,7 +18,7 @@ export interface PollingBlockTrackerOptions {
 }
 
 export interface Block {
-    hash: string
+    hash: string | null
     version: string
 }
 

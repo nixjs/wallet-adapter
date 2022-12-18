@@ -86,6 +86,43 @@ export namespace AptosApiRequest {
         })
     }
 
+    export function getAccountTransactions(
+        baseURL: string,
+        address: string,
+        limit?: number,
+        start?: number
+    ): Promise<Interfaces.ResponseData<AptosTypes.Transaction[]>> {
+        const query: {
+            start?: bigint | number
+            limit?: number
+        } = {}
+        if (limit && limit > 0) {
+            query.limit = limit
+        }
+        if (start && start > 0) {
+            query.start = start
+        }
+        return new Promise((resolve) => {
+            interceptors(axios)
+            axios
+                .get(`${baseURL}/v1/accounts/${address}/transactions`, {
+                    params: query,
+                })
+                .then((res) =>
+                    resolve({
+                        status: 'SUCCESS',
+                        data: res.data,
+                    })
+                )
+                .catch((err) => {
+                    return resolve({
+                        status: 'ERROR',
+                        error: err.response,
+                    })
+                })
+        })
+    }
+
     export function fetchAccountResourceApi(
         baseURL: string,
         address: string,

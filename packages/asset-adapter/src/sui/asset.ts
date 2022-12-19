@@ -47,14 +47,29 @@ export class SUIAsset extends BaseProvider {
         }
     }
 
-    async getAssetBalances(chainId: string, address: string): Promise<AssetTypes.AssetAmount[]> {
+    async getNativeAssetBalance(chainId: string, address: string): Promise<AssetTypes.AssetAmount> {
         try {
             const nodeURL = SUIUtil.BaseNodeByChainInfo[chainId]
             let balances: AssetTypes.AssetAmount[] = []
             if (nodeURL && address) {
                 balances = await SUIApiRequest.getCoinsBalance(nodeURL, address)
-            } else balances = [DefaultAssetBalance]
-            return balances
+                const balance = balances.find((b) => b.assetId === SUIUtil.SUICoinStore)
+                if (balance) return balance
+            }
+            return DefaultAssetBalance
+        } catch (error) {
+            return DefaultAssetBalance
+        }
+    }
+
+    async getAssetBalances(chainId: string, address: string): Promise<AssetTypes.AssetAmount[]> {
+        try {
+            const nodeURL = SUIUtil.BaseNodeByChainInfo[chainId]
+            if (nodeURL && address) {
+                const balances = await SUIApiRequest.getCoinsBalance(nodeURL, address)
+                return balances
+            }
+            return [DefaultAssetBalance]
         } catch (error) {
             return [DefaultAssetBalance]
         }

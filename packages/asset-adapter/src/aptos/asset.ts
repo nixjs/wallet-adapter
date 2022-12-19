@@ -103,6 +103,26 @@ export class AptosAsset extends BaseProvider {
         }
     }
 
+    async getNativeAssetBalance(chainId: string, address: string): Promise<AssetTypes.AssetAmount> {
+        try {
+            const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
+            const balance: AssetTypes.AssetAmount = DefaultAssetBalance
+            if (nodeURL && address) {
+                const result = await AptosUtil.AptosApiRequest.fetchAccountResourceApi(nodeURL, address, AptosUtil.AptosCoinStore)
+                if (result.status === 'SUCCESS' && result.data) {
+                    const resource = result.data
+                    return {
+                        amount: String(parseFloat((resource.data as { coin: { value: string } }).coin.value)),
+                        assetId: resource.type,
+                    } as AssetTypes.AssetAmount
+                }
+            }
+            return balance
+        } catch (error) {
+            console.log('[getNativeAssetBalance]', error)
+            return DefaultAssetBalance
+        }
+    }
     async getAssetBalances(chainId: string, address: string): Promise<AssetTypes.AssetAmount[]> {
         try {
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]

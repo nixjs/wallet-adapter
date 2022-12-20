@@ -3,7 +3,6 @@ import { Interfaces } from '@nixjs23n6/types'
 import { AptosClient, AptosAccount, Types as AptosTypes, TxnBuilderTypes, BCS } from 'aptos'
 import { AptosEnums } from './enums'
 import { AptosCoinStore, BaseMaxGasAmount, BaseExpireTimestamp } from './const'
-import { secondFromNow } from '../helper/date'
 
 function interceptors(axiosInstance: Axios) {
     axiosInstance.interceptors.response.use((response) => {

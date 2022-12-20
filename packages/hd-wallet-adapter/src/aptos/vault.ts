@@ -74,7 +74,7 @@ export class AptosVault extends BaseProvider {
         }
     }
 
-    async signMessage(message: Uint8Array | string, privateKey?: HexString): Promise<HexString> {
+    async signMessage(message: Uint8Array | string, owner?: VaultTypes.AccountObject): Promise<HexString> {
         function Uint8ArrayToBuffer(bytes: Uint8Array) {
             const buffer = Buffer.alloc(bytes.byteLength)
             for (let i = 0; i < buffer.length; ++i) {
@@ -84,9 +84,11 @@ export class AptosVault extends BaseProvider {
         }
         const buffer = message instanceof Uint8Array ? Uint8ArrayToBuffer(message) : Buffer.from(message)
         let signature: HexString
-        if (privateKey) {
+
+        if (owner && owner.privateKeyHex && owner.publicKeyHex) {
+            const ourPrivateKey = new HexString(Crypto.mergePrivateKey(owner.publicKeyHex, owner.privateKeyHex)).toUint8Array()
             const toSign = HexString.ensure(HexString.fromBuffer(buffer)).toUint8Array()
-            const signed = await nacl.sign(toSign, privateKey.toUint8Array())
+            const signed = await nacl.sign(toSign, ourPrivateKey)
             signature = HexString.fromUint8Array(signed)
         } else {
             signature = await this.hdKey.sign(HexString.fromBuffer(buffer))
@@ -96,12 +98,14 @@ export class AptosVault extends BaseProvider {
 
     async signTransaction(
         unsigned: TransactionTypes.UnsignedTransaction,
-        privateKey?: HexString
+        owner?: VaultTypes.AccountObject
     ): Promise<TransactionTypes.SignedTransaction> {
         let signature: HexString
-        if (privateKey) {
+
+        if (owner && owner.privateKeyHex && owner.publicKeyHex) {
+            const ourPrivateKey = new HexString(Crypto.mergePrivateKey(owner.publicKeyHex, owner.privateKeyHex)).toUint8Array()
             const toSign = HexString.ensure(unsigned.data.hex()).toUint8Array()
-            const signed = await nacl.sign(toSign, privateKey.toUint8Array())
+            const signed = await nacl.sign(toSign, ourPrivateKey)
             signature = HexString.fromUint8Array(signed)
         } else {
             signature = await this.hdKey.signBuffer(Buffer.from(unsigned.data.hex()))

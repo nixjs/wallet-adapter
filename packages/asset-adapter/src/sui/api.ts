@@ -45,6 +45,7 @@ export namespace SUIApiRequest {
         const query = new JsonRpcProvider(nodeURL, {
             skipDataValidation: false,
         })
+
         const objects = await getOwnedObjects(query, address)
         const res = objects
             .map((item) => ({
@@ -60,18 +61,13 @@ export namespace SUIApiRequest {
         return res.map(
             (nft) =>
                 ({
-                    name: nft.name,
+                    name: nft.name || nft.objectId,
                     description: nft.description,
                     uri: nft.url,
                     id: nft.objectId,
                     collection: '',
                     creator: '',
-                    metadata: {
-                        objectId: nft.objectId,
-                        previousTransaction: nft.previousTransaction,
-                        objectType: nft.objectType,
-                        hasPublicTransfer: nft.hasPublicTransfer,
-                    },
+                    metadata: nft,
                 } as AssetTypes.NFT)
         )
     }

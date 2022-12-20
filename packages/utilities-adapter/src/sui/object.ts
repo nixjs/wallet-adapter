@@ -78,10 +78,12 @@ export type NftObject = {
 
 export class Nft {
     public static isNft(obj: SuiMoveObject) {
-        if (obj.fields.name && obj.fields.description && obj.fields.url) {
-            return true
-        } else if (obj.fields.metadata) {
-            return true
+        if (!Coin.isCoin(obj)) {
+            if (obj.fields?.name || obj.fields?.description || obj.fields?.url) {
+                return true
+            } else if (obj.fields?.metadata) {
+                return true
+            }
         }
         return false
     }

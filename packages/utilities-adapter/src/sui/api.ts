@@ -16,9 +16,6 @@ import { TransactionTypes } from '../types'
 import { TransactionEnums } from '../enums'
 
 export namespace SUIApiRequest {
-    // export async function fetchEstimateApi() {
-
-    // }
     export async function getTransactionsForAddress(nodeURL: string, address: string): Promise<TransactionTypes.Transaction[]> {
         const query = new JsonRpcProvider(nodeURL, {
             skipDataValidation: false,
@@ -64,50 +61,26 @@ export namespace SUIApiRequest {
                         type: address === data.sender ? TransactionEnums.TransactionType.SEND : TransactionEnums.TransactionType.RECEIVE,
                     })
                 } else if (paySui) {
-                    for (const coin of paySui.coins) {
-                        const resp = await query.getObject(coin.objectId)
-                        if (resp && resp.status === 'Exists') {
-                            const obj = getMoveObject(resp)
-                            let txObj: Types.Undefined<TransactionTypes.TransactionObject>
-                            if (obj && Coin.isCoin(obj)) {
-                                const coinObj = Coin.getCoinObject(obj)
-                                txObj = {
-                                    type: 'coin',
-                                    symbol: coinObj.symbol,
-                                    balance: String(coinObj.balance),
-                                } as TransactionTypes.CoinObject
-                            } else if (obj && Nft.isNft(obj)) {
-                                const nftObject = Nft.getNftObject(obj, undefined)
-                                txObj = {
-                                    type: 'nft',
-                                    name: nftObject.name,
-                                    description: nftObject.description,
-                                    url: nftObject.url,
-                                } as TransactionTypes.NFTObject
-                            }
-                            if (txObj) {
-                                results.push({
-                                    timestamp: effect.timestamp_ms ? Math.floor(effect.timestamp_ms / 1000) : null,
-                                    status:
-                                        getExecutionStatusType(effect) === 'success'
-                                            ? TransactionEnums.TransactionStatus.SUCCESS
-                                            : TransactionEnums.TransactionStatus.FAILED,
-                                    hash: effect.certificate.transactionDigest,
-                                    gasFee:
-                                        effect.effects.gasUsed.computationCost +
-                                        effect.effects.gasUsed.storageCost -
-                                        effect.effects.gasUsed.storageRebate,
-                                    from: data.sender,
-                                    to: paySui.recipients[0],
-                                    data: txObj,
-                                    type:
-                                        address === data.sender
-                                            ? TransactionEnums.TransactionType.SEND
-                                            : TransactionEnums.TransactionType.RECEIVE,
-                                })
-                            }
-                        }
-                    }
+                    results.push({
+                        timestamp: effect.timestamp_ms ? Math.floor(effect.timestamp_ms / 1000) : null,
+                        status:
+                            getExecutionStatusType(effect) === 'success'
+                                ? TransactionEnums.TransactionStatus.SUCCESS
+                                : TransactionEnums.TransactionStatus.FAILED,
+                        hash: effect.certificate.transactionDigest,
+                        gasFee:
+                            effect.effects.gasUsed.computationCost +
+                            effect.effects.gasUsed.storageCost -
+                            effect.effects.gasUsed.storageRebate,
+                        from: data.sender,
+                        to: paySui.recipients[0],
+                        data: {
+                            type: 'coin',
+                            symbol: 'SUI',
+                            balance: String(paySui.amounts?.[0] || '0'),
+                        } as TransactionTypes.CoinObject,
+                        type: address === data.sender ? TransactionEnums.TransactionType.SEND : TransactionEnums.TransactionType.RECEIVE,
+                    })
                 } else if (pay) {
                     for (const coin of pay.coins) {
                         const resp = await query.getObject(coin.objectId)

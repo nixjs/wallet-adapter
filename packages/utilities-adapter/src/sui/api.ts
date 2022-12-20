@@ -28,7 +28,7 @@ export namespace SUIApiRequest {
         const effects = await query.getTransactionWithEffectsBatch(digests)
         const results = []
 
-        const limit = RateLimit(50) // rps
+        const limit = RateLimit(100) // rps
         for (const effect of effects) {
             const data = getTransactionData(effect.certificate)
             await limit()
@@ -98,7 +98,7 @@ export namespace SUIApiRequest {
                                 const nftObject = Nft.getNftObject(obj, undefined)
                                 txObj = {
                                     type: 'nft',
-                                    name: nftObject.name,
+                                    name: nftObject.name || coin.objectId,
                                     description: nftObject.description,
                                     url: nftObject.url,
                                 } as TransactionTypes.NFTObject
@@ -144,7 +144,7 @@ export namespace SUIApiRequest {
                             const nftObject = Nft.getNftObject(obj, undefined)
                             txObj = {
                                 type: 'nft',
-                                name: nftObject.name,
+                                name: nftObject.name || transferObject.objectRef.objectId,
                                 description: nftObject.description,
                                 url: nftObject.url,
                             } as TransactionTypes.NFTObject

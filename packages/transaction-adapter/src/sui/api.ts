@@ -22,7 +22,7 @@ import {
     Base64DataBuffer,
     TransactionEffects,
 } from '@mysten/sui.js'
-import { Types } from '@nixjs23n6/types'
+import { Interfaces, Types } from '@nixjs23n6/types'
 import { Crypto } from '@nixjs23n6/hd-wallet-adapter'
 import { SUIUtil, TransactionTypes, TransactionEnums, HexString, VaultTypes } from '@nixjs23n6/utilities-adapter'
 import { RateLimit } from '@nixjs23n6/async-sema'
@@ -44,7 +44,7 @@ export class Provider {
         to: string,
         gasLimit?: number
     ): Promise<
-        Types.Nullable<{
+        Interfaces.ResponseData<{
             rawData: Base64DataBuffer
             gasLimit: string
             transactionFee: string
@@ -69,7 +69,7 @@ export class Provider {
         from: VaultTypes.AccountObject,
         gasLimit?: number
     ): Promise<
-        Types.Nullable<{
+        Interfaces.ResponseData<{
             rawData: Base64DataBuffer
             gasLimit: string
             transactionFee: string
@@ -82,16 +82,6 @@ export class Provider {
         }
         return await this.tx.transferObject(objectId, recipient, from, gasLimit)
     }
-
-    // async mintExampleNft(vault: SUI.SUIVault) {
-    //     const gasObject = await this.query.getGasObject(vault.address(), MINT_EXAMPLE_NFT_MOVE_CALL.gasBudget)
-    //     await this.tx.mintExampleNft(vault, gasObject ? gasObject.objectId : undefined)
-    // }
-
-    // async executeMoveCall(tx: MoveCallTransaction, vault: SUI.SUIVault) {
-    //     const gasObject = await this.query.getGasObject(vault.address(), MINT_EXAMPLE_NFT_MOVE_CALL.gasBudget)
-    //     return await this.tx.executeMoveCall(tx, vault, gasObject ? gasObject.objectId : undefined)
-    // }
 }
 
 export class QueryProvider {
@@ -400,7 +390,7 @@ export class TxProvider {
         from: VaultTypes.AccountObject,
         gasLimit?: number
     ): Promise<
-        Types.Nullable<{
+        Interfaces.ResponseData<{
             rawData: Base64DataBuffer
             gasLimit: string
             transactionFee: string
@@ -419,20 +409,22 @@ export class TxProvider {
             const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
             if (simulateTxn && simulateTxn.status.status === 'success') {
                 return {
-                    rawData: data,
-                    gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
-                    transactionFee: String(
-                        simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
-                    ),
+                    data: {
+                        rawData: data,
+                        gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
+                        transactionFee: String(
+                            simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
+                        ),
+                    },
+                    status: 'SUCCESS',
                 }
             }
             return {
-                rawData: data,
-                gasLimit: String(DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI),
-                transactionFee: '',
+                error: simulateTxn,
+                status: 'ERROR',
             }
         } catch (error) {
-            return null
+            return { error, status: 'ERROR' }
         }
     }
 
@@ -443,7 +435,7 @@ export class TxProvider {
         to: string,
         gasLimit?: number
     ): Promise<
-        Types.Nullable<{
+        Interfaces.ResponseData<{
             rawData: Base64DataBuffer
             gasLimit: string
             transactionFee: string
@@ -474,20 +466,25 @@ export class TxProvider {
             const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
             if (simulateTxn && simulateTxn.status.status === 'success') {
                 return {
-                    rawData: data,
-                    gasLimit: String(gasBudget),
-                    transactionFee: String(
-                        simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
-                    ),
+                    data: {
+                        rawData: data,
+                        gasLimit: String(gasBudget),
+                        transactionFee: String(
+                            simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
+                        ),
+                    },
+                    status: 'SUCCESS',
                 }
             }
             return {
-                rawData: data,
-                gasLimit: String(gasBudget),
-                transactionFee: '',
+                error: simulateTxn,
+                status: 'ERROR',
             }
         } catch (error) {
-            return null
+            return {
+                error,
+                status: 'ERROR',
+            }
         }
     }
 
@@ -498,7 +495,7 @@ export class TxProvider {
         to: string,
         gasLimit?: number
     ): Promise<
-        Types.Nullable<{
+        Interfaces.ResponseData<{
             rawData: Base64DataBuffer
             gasLimit: string
             transactionFee: string
@@ -525,17 +522,19 @@ export class TxProvider {
                 const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
                 if (simulateTxn && simulateTxn.status.status === 'success') {
                     return {
-                        rawData: data,
-                        gasLimit: String(gasBudget),
-                        transactionFee: String(
-                            simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
-                        ),
+                        data: {
+                            rawData: data,
+                            gasLimit: String(gasBudget),
+                            transactionFee: String(
+                                simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
+                            ),
+                        },
+                        status: 'SUCCESS',
                     }
                 }
                 return {
-                    rawData: data,
-                    gasLimit: String(gasBudget),
-                    transactionFee: '',
+                    error: simulateTxn,
+                    status: 'ERROR',
                 }
             }
             const gasCostForPay = SUIUtil.Coin.estimatedGasCostForPay(coins.length)
@@ -592,20 +591,25 @@ export class TxProvider {
             const simulateTxn: TransactionEffects = await this.provider.dryRunTransaction(data.toString())
             if (simulateTxn && simulateTxn.status.status === 'success') {
                 return {
-                    rawData: data,
-                    gasLimit: String(gasCostForPay),
-                    transactionFee: String(
-                        simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
-                    ),
+                    data: {
+                        rawData: data,
+                        gasLimit: String(gasCostForPay),
+                        transactionFee: String(
+                            simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
+                        ),
+                    },
+                    status: 'SUCCESS',
                 }
             }
             return {
-                rawData: data,
-                gasLimit: String(gasCostForPay),
-                transactionFee: '',
+                error: simulateTxn,
+                status: 'ERROR',
             }
         } catch (error) {
-            return null
+            return {
+                error,
+                status: 'ERROR',
+            }
         }
     }
 }
@@ -615,7 +619,7 @@ export async function executeTransaction(
     owner: VaultTypes.AccountObject,
     data: Base64DataBuffer,
     requestType: ExecuteTransactionRequestType = 'WaitForLocalExecution'
-): Promise<Types.Nullable<SuiExecuteTransactionResponse>> {
+): Promise<Interfaces.ResponseData<SuiExecuteTransactionResponse>> {
     try {
         if (!owner.address || !owner.publicKeyHex) throw new Error('Owner info not found')
         const keypair = new Ed25519Keypair({
@@ -624,9 +628,15 @@ export async function executeTransaction(
         })
         const signer = new RawSigner(keypair, provider)
         const txn = await signer.signAndExecuteTransaction(data, requestType)
-        return txn
+        return {
+            data: txn,
+            status: 'SUCCESS',
+        }
     } catch (error) {
         console.log('[executeTransaction]', error)
-        return null
+        return {
+            error,
+            status: 'ERROR',
+        }
     }
 }

@@ -1,8 +1,13 @@
-import { Types } from '@nixjs23n6/types'
+import { Types, Interfaces } from '@nixjs23n6/types'
 import { TransactionTypes, ProviderEnums, AssetTypes, VaultTypes } from '@nixjs23n6/utilities-adapter'
 
 export abstract class BaseProvider {
-    abstract getTransactions(chainId: string, address: string, offset?: number, size?: number): Promise<TransactionTypes.Transaction[]>
+    abstract getTransactions(
+        chainId: string,
+        address: string,
+        offset?: number,
+        size?: number
+    ): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>>
     abstract getAddressExplorer(explorerURL: string, address: string, type: ProviderEnums.Network): string
     abstract getTransactionExplorer(explorerURL: string, address: string, type: ProviderEnums.Network): string
     abstract estimateGasUnitPrice(chainId: string): Promise<Types.Nullable<string>>
@@ -14,12 +19,12 @@ export abstract class BaseProvider {
         chainId: string,
         gasLimit?: string,
         gasPrice?: string
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>>
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>>
     abstract registerAsset(
         chainId: string,
         asset: AssetTypes.Asset,
         owner: VaultTypes.AccountObject
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>>
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>>
 
     abstract simulateTransaction(
         chainId: string,
@@ -28,14 +33,14 @@ export abstract class BaseProvider {
         type: 'transfer' | 'script',
         gasLimit?: string,
         gasPrice?: string
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction>>
-    abstract executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Types.Nullable<string>>
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction>>
+    abstract executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Interfaces.ResponseData<string>>
     abstract checkReceiveNFTStatus(chainId: string, address: string): Promise<boolean>
     abstract allowReceiveNFT(
         chainId: string,
         owner: VaultTypes.AccountObject,
         allow: boolean
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction>>
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction>>
     abstract transferNFT(
         chainId: string,
         NFT: AssetTypes.NFT,
@@ -44,6 +49,6 @@ export abstract class BaseProvider {
         to: string,
         gasLimit?: string | undefined,
         gasPrice?: string | undefined
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferNFTTransaction>>
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferNFTTransaction>>
     abstract fundAccount(chainId: string, to: string, faucetURL: string): Promise<boolean>
 }

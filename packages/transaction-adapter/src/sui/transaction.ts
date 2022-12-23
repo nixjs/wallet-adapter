@@ -1,12 +1,6 @@
-import { Types } from '@nixjs23n6/types'
-import { TransactionTypes, ProviderEnums, SUIUtil, AssetTypes, VaultTypes, Helper } from '@nixjs23n6/utilities-adapter'
-import {
-    JsonRpcProvider,
-    SuiExecuteTransactionResponse,
-    CertifiedTransaction,
-    SuiCertifiedTransactionEffects,
-    TransactionEffects,
-} from '@mysten/sui.js'
+import { Types, Interfaces } from '@nixjs23n6/types'
+import { TransactionTypes, ProviderEnums, SUIUtil, AssetTypes, VaultTypes, Helper, IError } from '@nixjs23n6/utilities-adapter'
+import { JsonRpcProvider, CertifiedTransaction, SuiCertifiedTransactionEffects, TransactionEffects } from '@mysten/sui.js'
 import { BaseProvider } from '../base'
 import { Provider, executeTransaction } from './api'
 
@@ -14,13 +8,19 @@ export class SUITransaction extends BaseProvider {
     public get type(): ProviderEnums.Provider {
         return ProviderEnums.Provider.SUI
     }
-    async getTransactions(chainId: string, address: string): Promise<TransactionTypes.Transaction[]> {
+    async getTransactions(chainId: string, address: string): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>> {
         try {
             const nodeURL = SUIUtil.BaseNodeByChainInfo[chainId]
             const txns = await SUIUtil.SUIApiRequest.getTransactionsForAddress(nodeURL, address)
-            return txns.sort((o1, o2) => Number(o2.timestamp) - Number(o1.timestamp))
-        } catch (_error) {
-            return []
+            return {
+                data: txns.sort((o1, o2) => Number(o2.timestamp) - Number(o1.timestamp)),
+                status: 'SUCCESS',
+            }
+        } catch (error) {
+            return {
+                error,
+                status: 'ERROR',
+            }
         }
     }
 
@@ -36,10 +36,9 @@ export class SUITransaction extends BaseProvider {
         chainId: string,
         asset: AssetTypes.Asset,
         owner: VaultTypes.AccountObject
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>> {
-        try {
-            let result: Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction> = null
-            result = {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>> {
+        return {
+            data: {
                 type: 'none',
                 transactionType: 'script',
                 rawData: null,
@@ -48,11 +47,8 @@ export class SUITransaction extends BaseProvider {
                 from: owner,
                 to: '',
                 transactionFee: '',
-            }
-            return result
-        } catch (error) {
-            console.log('[registerAsset]', error)
-            return null
+            },
+            status: 'SUCCESS',
         }
     }
 
@@ -64,31 +60,38 @@ export class SUITransaction extends BaseProvider {
         chainId: string,
         gasLimit?: string | undefined,
         gasPrice?: string | undefined
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
         try {
-            let result: Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction> = null
             const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
             if (from && from.publicKeyHex) {
                 const ourAmount = Helper.Decimal.toDecimal(amount, asset.decimals)
-                const rawData = await provider.transferCoin(asset.symbol, Number(ourAmount), from, to)
-                if (rawData)
-                    result = {
-                        amount,
-                        asset,
-                        from,
-                        to,
-                        chainId,
-                        gasLimit: rawData.gasLimit,
-                        gasPrice,
-                        transactionFee: rawData.transactionFee,
-                        rawData: rawData.rawData,
-                        transactionType: 'transfer',
+                const result = await provider.transferCoin(asset.symbol, Number(ourAmount), from, to)
+                if (result.status === 'SUCCESS' && result.data) {
+                    const { gasLimit, rawData, transactionFee } = result.data
+                    return {
+                        data: {
+                            amount,
+                            asset,
+                            from,
+                            to,
+                            chainId,
+                            gasLimit,
+                            gasPrice,
+                            transactionFee,
+                            rawData,
+                            transactionType: 'transfer',
+                        },
+                        status: 'SUCCESS',
                     }
+                } else throw result.error
             }
-            return result
+            throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format()
         } catch (error) {
             console.log('[transferCoin]', error)
-            return null
+            return {
+                error,
+                status: 'ERROR',
+            }
         }
     }
 
@@ -109,7 +112,7 @@ export class SUITransaction extends BaseProvider {
         type: 'transfer' | 'script',
         gasLimit?: string,
         gasPrice?: string
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
         try {
             const provider = new JsonRpcProvider(SUIUtil.BaseNodeByChainInfo[chainId], {
                 skipDataValidation: true,
@@ -117,67 +120,84 @@ export class SUITransaction extends BaseProvider {
             const simulateTxn: TransactionEffects = await provider.dryRunTransaction(rawTxn.toString())
             if (simulateTxn && simulateTxn.status.status === 'success') {
                 return {
-                    chainId,
-                    from: owner,
-                    transactionFee: String(
-                        simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
-                    ),
-                    to: '',
-                    gasPrice,
-                    gasLimit,
-                    rawData: rawTxn,
-                    transactionType: type,
+                    data: {
+                        chainId,
+                        from: owner,
+                        transactionFee: String(
+                            simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
+                        ),
+                        to: '',
+                        gasPrice,
+                        gasLimit,
+                        rawData: rawTxn,
+                        transactionType: type,
+                    },
+                    status: 'SUCCESS',
                 }
             }
-            return null
+            return {
+                error: simulateTxn,
+                status: 'ERROR',
+            }
         } catch (error) {
             console.log('[simulateTransaction', error)
-            return null
+            return {
+                error,
+                status: 'ERROR',
+            }
         }
     }
 
-    async executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Types.Nullable<string>> {
+    async executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Interfaces.ResponseData<string>> {
         try {
             const provider = new JsonRpcProvider(SUIUtil.BaseNodeByChainInfo[chainId], {
                 skipDataValidation: true,
             })
-            const signedTxn: Types.Nullable<SuiExecuteTransactionResponse> = await executeTransaction(
-                provider,
-                owner,
-                rawTxn,
-                'WaitForLocalExecution'
-            )
-            if (!signedTxn) return null
-            if (Helper.Validation.hasProperty(signedTxn, 'ImmediateReturn') && (signedTxn as any)?.ImmediateReturn) {
-                return (
-                    signedTxn as {
-                        ImmediateReturn: {
-                            tx_digest: string
+            const signedTxnResult = await executeTransaction(provider, owner, rawTxn, 'WaitForLocalExecution')
+            if (signedTxnResult.status === 'ERROR' || !signedTxnResult.data) throw signedTxnResult.error
+            const { data } = signedTxnResult
+            if (Helper.Validation.hasProperty(data, 'ImmediateReturn') && (data as any)?.ImmediateReturn) {
+                return {
+                    data: (
+                        data as {
+                            ImmediateReturn: {
+                                tx_digest: string
+                            }
                         }
-                    }
-                ).ImmediateReturn.tx_digest
-            } else if (Helper.Validation.hasProperty(signedTxn, 'TxCert') && (signedTxn as any)?.TxCert) {
-                return (
-                    signedTxn as {
-                        TxCert: {
-                            certificate: CertifiedTransaction
+                    ).ImmediateReturn.tx_digest,
+                    status: 'SUCCESS',
+                }
+            } else if (Helper.Validation.hasProperty(data, 'TxCert') && (data as any)?.TxCert) {
+                return {
+                    data: (
+                        data as {
+                            TxCert: {
+                                certificate: CertifiedTransaction
+                            }
                         }
-                    }
-                ).TxCert.certificate.transactionDigest
-            } else if (Helper.Validation.hasProperty(signedTxn, 'EffectsCert') && (signedTxn as any)?.EffectsCert) {
-                return (
-                    signedTxn as {
-                        EffectsCert: {
-                            certificate: CertifiedTransaction
-                            effects: SuiCertifiedTransactionEffects
+                    ).TxCert.certificate.transactionDigest,
+                    status: 'SUCCESS',
+                }
+            } else if (Helper.Validation.hasProperty(data, 'EffectsCert') && (data as any)?.EffectsCert) {
+                return {
+                    data: (
+                        data as {
+                            EffectsCert: {
+                                certificate: CertifiedTransaction
+                                effects: SuiCertifiedTransactionEffects
+                            }
                         }
-                    }
-                ).EffectsCert.certificate.transactionDigest
+                    ).EffectsCert.certificate.transactionDigest,
+                    status: 'SUCCESS',
+                }
             }
-            return null
+            throw IError.ErrorConfigs[IError.ERROR_TYPE.DATA_NOT_FOUND].format()
         } catch (error) {
             console.log('[executeTransaction]', error)
-            return null
+            return {
+                error,
+                status: 'ERROR',
+            }
         }
     }
 
@@ -188,8 +208,10 @@ export class SUITransaction extends BaseProvider {
         chainId: string,
         owner: VaultTypes.AccountObject,
         allow: boolean
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
-        return null
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
+        return {
+            status: 'SUCCESS',
+        }
     }
     async transferNFT(
         chainId: string,
@@ -199,30 +221,36 @@ export class SUITransaction extends BaseProvider {
         to: string,
         gasLimit?: string | undefined,
         gasPrice?: string | undefined
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any> & TransactionTypes.RawTransferNFTTransaction>> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any> & TransactionTypes.RawTransferNFTTransaction>> {
         try {
-            let result: Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferNFTTransaction> = null
             const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
-            if (from && from.publicKeyHex) {
-                const rawData = await provider.transferObject(NFT.id, to, from, Number(gasLimit))
-                if (rawData)
-                    result = {
+            if (!from || !from.publicKeyHex) throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format()
+
+            const result = await provider.transferObject(NFT.id, to, from, Number(gasLimit))
+            if (result.status === 'SUCCESS' && result.data) {
+                const { gasLimit, rawData, transactionFee } = result.data
+                return {
+                    data: {
                         amount,
                         asset: NFT,
                         from,
                         to,
                         chainId,
-                        gasLimit: rawData.gasLimit,
+                        gasLimit,
                         gasPrice,
-                        transactionFee: rawData.transactionFee,
-                        rawData: rawData.rawData,
+                        transactionFee,
+                        rawData,
                         transactionType: 'transfer-nft',
-                    }
+                    },
+                    status: 'SUCCESS',
+                }
             }
-            return result
+            throw result.error
         } catch (error) {
-            console.log('[transferNFT]', error)
-            return null
+            return {
+                error,
+                status: 'ERROR',
+            }
         }
     }
     async fundAccount(chainId: string, to: string, faucetURL: string): Promise<boolean> {

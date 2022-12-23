@@ -9,6 +9,7 @@ import {
     VaultTypes,
     Helper,
     HexString,
+    IError,
 } from '@nixjs23n6/utilities-adapter'
 import { Aptos as AptosAsset } from '@nixjs23n6/asset-adapter'
 import { Crypto } from '@nixjs23n6/hd-wallet-adapter'
@@ -22,7 +23,7 @@ import {
     FaucetClient,
 } from 'aptos'
 import { RateLimit } from '@nixjs23n6/async-sema'
-import { uniqBy } from 'lodash-es'
+import { add, uniqBy } from 'lodash-es'
 import { BaseProvider } from '../base'
 
 export class AptosTransaction extends BaseProvider {
@@ -60,85 +61,92 @@ export class AptosTransaction extends BaseProvider {
         address: string,
         offset = BaseConst.BaseQuery.offset,
         size = BaseConst.BaseQuery.size
-    ): Promise<TransactionTypes.Transaction[]> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>> {
         try {
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             let accounts: TransactionTypes.Transaction[] = []
             let deposits: TransactionTypes.Transaction[] = []
             let withdraws: TransactionTypes.Transaction[] = []
-
-            if (nodeURL && address) {
-                const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, address)
-                if (resources.status === 'SUCCESS' && resources.data && resources.data.length > 0) {
-                    const ourResources = resources.data
-                        .map((d) => ({
-                            ...d,
-                            address: this.getCoinAddress(d.type) || '',
-                        }))
-                        .filter((n) => n.type.includes(AptosUtil.BaseCoinStore) || n.type.includes(AptosUtil.AptosTokenStore))
-                    const limit = RateLimit(8) // rps
-                    if (ourResources.length > 0) {
-                        for (let r = 0; r < ourResources.length; r++) {
-                            const target = ourResources[r]
-                            const { deposit_events, withdraw_events } = target.data as any
-                            const coinType = target.type
-                            if (coinType) {
-                                await limit()
-                                if (Number(withdraw_events?.counter) > 0) {
-                                    const withdrawEvents: Interfaces.ResponseData<(AptosTypes.Event & { version: string })[]> =
-                                        await AptosUtil.AptosApiRequest.fetchEventsByEventHandleApi(
-                                            nodeURL,
-                                            address,
-                                            AptosUtil.AptosCoinStore,
-                                            AptosUtil.AptosEnums.TxEvent.WITHDRAW_EVENT,
-                                            200,
-                                            offset
-                                        )
-                                    if (withdrawEvents.status === 'SUCCESS' && withdrawEvents.data) {
-                                        const withdrawsTnx = await this.getTransactionByVersion(
-                                            withdrawEvents.data,
-                                            AptosUtil.AptosEnums.TxEvent.WITHDRAW_EVENT,
-                                            nodeURL
-                                        )
-                                        withdraws = withdraws.concat(withdrawsTnx)
-                                    }
+            if (!nodeURL || !address)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    nodeURL,
+                    address,
+                })
+            const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, address)
+            if (resources.status === 'SUCCESS' && resources.data && resources.data.length > 0) {
+                const ourResources = resources.data
+                    .map((d) => ({
+                        ...d,
+                        address: this.getCoinAddress(d.type) || '',
+                    }))
+                    .filter((n) => n.type.includes(AptosUtil.BaseCoinStore) || n.type.includes(AptosUtil.AptosTokenStore))
+                const limit = RateLimit(8) // rps
+                if (ourResources.length > 0) {
+                    for (let r = 0; r < ourResources.length; r++) {
+                        const target = ourResources[r]
+                        const { deposit_events, withdraw_events } = target.data as any
+                        const coinType = target.type
+                        if (coinType) {
+                            await limit()
+                            if (Number(withdraw_events?.counter) > 0) {
+                                const withdrawEvents: Interfaces.ResponseData<(AptosTypes.Event & { version: string })[]> =
+                                    await AptosUtil.AptosApiRequest.fetchEventsByEventHandleApi(
+                                        nodeURL,
+                                        address,
+                                        AptosUtil.AptosCoinStore,
+                                        AptosUtil.AptosEnums.TxEvent.WITHDRAW_EVENT,
+                                        200,
+                                        offset
+                                    )
+                                if (withdrawEvents.status === 'SUCCESS' && withdrawEvents.data) {
+                                    const withdrawsTnx = await this.getTransactionByVersion(
+                                        withdrawEvents.data,
+                                        AptosUtil.AptosEnums.TxEvent.WITHDRAW_EVENT,
+                                        nodeURL
+                                    )
+                                    withdraws = withdraws.concat(withdrawsTnx)
                                 }
-                                if (Number(deposit_events?.counter) > 0) {
-                                    const depositEvents: Interfaces.ResponseData<(AptosTypes.Event & { version: string })[]> =
-                                        await AptosUtil.AptosApiRequest.fetchEventsByEventHandleApi(
-                                            nodeURL,
-                                            address,
-                                            coinType,
-                                            AptosUtil.AptosEnums.TxEvent.DEPOSIT_EVENT,
-                                            200,
-                                            offset
-                                        )
-                                    if (depositEvents.status === 'SUCCESS' && depositEvents.data) {
-                                        const depositTxn = await this.getTransactionByVersion(
-                                            depositEvents.data,
-                                            AptosUtil.AptosEnums.TxEvent.DEPOSIT_EVENT,
-                                            nodeURL
-                                        )
-                                        deposits = deposits.concat(depositTxn)
-                                    }
+                            }
+                            if (Number(deposit_events?.counter) > 0) {
+                                const depositEvents: Interfaces.ResponseData<(AptosTypes.Event & { version: string })[]> =
+                                    await AptosUtil.AptosApiRequest.fetchEventsByEventHandleApi(
+                                        nodeURL,
+                                        address,
+                                        coinType,
+                                        AptosUtil.AptosEnums.TxEvent.DEPOSIT_EVENT,
+                                        200,
+                                        offset
+                                    )
+                                if (depositEvents.status === 'SUCCESS' && depositEvents.data) {
+                                    const depositTxn = await this.getTransactionByVersion(
+                                        depositEvents.data,
+                                        AptosUtil.AptosEnums.TxEvent.DEPOSIT_EVENT,
+                                        nodeURL
+                                    )
+                                    deposits = deposits.concat(depositTxn)
                                 }
                             }
                         }
                     }
                 }
-                const accountTxesResponse: Interfaces.ResponseData<AptosTypes.Transaction[]> =
-                    await AptosUtil.AptosApiRequest.fetchAccountTransactionsApi(nodeURL, address, 200, offset)
-                if (accountTxesResponse.status === 'SUCCESS' && accountTxesResponse.data)
-                    accounts = this.getTransactionByAccount(accountTxesResponse.data, address)
-                const txns = uniqBy(
-                    [...accounts, ...deposits, ...withdraws].sort((o1, o2) => Number(o2.timestamp) - Number(o1.timestamp)),
-                    'version'
-                )
-                return txns
             }
-            return []
-        } catch (_error) {
-            return []
+            const accountTxesResponse: Interfaces.ResponseData<AptosTypes.Transaction[]> =
+                await AptosUtil.AptosApiRequest.fetchAccountTransactionsApi(nodeURL, address, 200, offset)
+            if (accountTxesResponse.status === 'SUCCESS' && accountTxesResponse.data)
+                accounts = this.getTransactionByAccount(accountTxesResponse.data, address)
+            const txns = uniqBy(
+                [...accounts, ...deposits, ...withdraws].sort((o1, o2) => Number(o2.timestamp) - Number(o1.timestamp)),
+                'version'
+            )
+            return {
+                data: txns,
+                status: 'SUCCESS',
+            }
+        } catch (error) {
+            return {
+                error,
+                status: 'ERROR',
+            }
         }
     }
 
@@ -337,10 +345,12 @@ export class AptosTransaction extends BaseProvider {
         chainId: string,
         gasLimit?: string,
         gasPrice?: string
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
         try {
-            if (!from.address || !from.publicKeyHex) throw new Error('Owner info not found')
-            let result: Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction> = null
+            if (!from.address || !from.publicKeyHex)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    owner: 'Invalid information',
+                })
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             const client = new AptosClient(nodeURL)
             const { assetId, decimals } = asset
@@ -350,7 +360,10 @@ export class AptosTransaction extends BaseProvider {
 
             const exactTokenName = this.getCoinExactName(assetId)
 
-            if (!exactTokenName) throw new Error('Coin exact name undefined')
+            if (!exactTokenName)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    assetId: 'Asset not found',
+                })
 
             let transferPayload: Types.Nullable<TxnBuilderTypes.TransactionPayloadEntryFunction> = null
 
@@ -379,25 +392,28 @@ export class AptosTransaction extends BaseProvider {
                 const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, owner, rawTxn)
                 if (simulateTxn && simulateTxn.length > 0) {
                     const { gas_used, expiration_timestamp_secs } = simulateTxn[0]
-                    result = {
-                        amount,
-                        asset,
-                        from,
-                        to,
-                        chainId,
-                        gasLimit,
-                        gasPrice,
-                        transactionFee: gas_used,
-                        expirationTimestamp: expiration_timestamp_secs,
-                        rawData: rawTxn,
-                        transactionType: 'transfer',
+                    return {
+                        data: {
+                            amount,
+                            asset,
+                            from,
+                            to,
+                            chainId,
+                            gasLimit,
+                            gasPrice,
+                            transactionFee: gas_used,
+                            expirationTimestamp: expiration_timestamp_secs,
+                            rawData: rawTxn,
+                            transactionType: 'transfer',
+                        },
+                        status: 'SUCCESS',
                     }
                 }
             }
-            return result
+            throw IError.ErrorConfigs[IError.ERROR_TYPE.DATA_NOT_FOUND].format()
         } catch (error) {
             console.log('[transferCoin]', error)
-            return null
+            return { error, status: 'ERROR' }
         }
     }
 
@@ -420,9 +436,12 @@ export class AptosTransaction extends BaseProvider {
         chainId: string,
         asset: AssetTypes.Asset,
         owner: VaultTypes.AccountObject
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>> {
         try {
-            if (!owner.address || !owner.publicKeyHex) throw new Error('Owner not found')
+            if (!owner.address || !owner.publicKeyHex)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    owner: 'Invalid information',
+                })
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             const client = new AptosClient(nodeURL)
 
@@ -439,21 +458,24 @@ export class AptosTransaction extends BaseProvider {
             const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateTransaction(owner.address, params)
             const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
             return {
-                type: 'gas',
-                rawData: rawTxn,
-                asset,
-                expirationTimestamp: simulateTxn?.[0].expiration_timestamp_secs,
-                gasLimit: simulateTxn?.[0].max_gas_amount,
-                gasPrice: simulateTxn?.[0].gas_unit_price,
-                transactionFee: simulateTxn?.[0].gas_used,
-                chainId,
-                from: owner,
-                to: '',
-                transactionType: 'script',
-            } as TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction
+                data: {
+                    type: 'gas',
+                    rawData: rawTxn,
+                    asset,
+                    expirationTimestamp: simulateTxn?.[0].expiration_timestamp_secs,
+                    gasLimit: simulateTxn?.[0].max_gas_amount,
+                    gasPrice: simulateTxn?.[0].gas_unit_price,
+                    transactionFee: simulateTxn?.[0].gas_used,
+                    chainId,
+                    from: owner,
+                    to: '',
+                    transactionType: 'script',
+                } as TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction,
+                status: 'SUCCESS',
+            }
         } catch (error) {
             console.log('[registerAsset]', error)
-            return null
+            return { error, status: 'ERROR' }
         }
     }
 
@@ -464,9 +486,12 @@ export class AptosTransaction extends BaseProvider {
         type: 'transfer' | 'script',
         gasLimit?: string,
         gasPrice?: string
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
         try {
-            if (!owner.address || !owner.publicKeyHex) throw new Error('Owner not found')
+            if (!owner.address || !owner.publicKeyHex)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    owner: 'Invalid information',
+                })
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             const client = new AptosClient(nodeURL)
 
@@ -476,34 +501,37 @@ export class AptosTransaction extends BaseProvider {
             const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
             if (simulateTxn.length > 0) {
                 return {
-                    chainId,
-                    from: owner,
-                    to: '',
-                    transactionFee: simulateTxn[0].gas_used,
-                    gasPrice: simulateTxn[0].gas_unit_price,
-                    gasLimit: simulateTxn[0].max_gas_amount,
-                    rawData: rawTxn,
-                    expirationTimestamp: simulateTxn[0].expiration_timestamp_secs,
-                    transactionType: type,
+                    status: 'SUCCESS',
+                    data: {
+                        chainId,
+                        from: owner,
+                        to: '',
+                        transactionFee: simulateTxn[0].gas_used,
+                        gasPrice: simulateTxn[0].gas_unit_price,
+                        gasLimit: simulateTxn[0].max_gas_amount,
+                        rawData: rawTxn,
+                        expirationTimestamp: simulateTxn[0].expiration_timestamp_secs,
+                        transactionType: type,
+                    },
                 }
             }
-            return null
+            throw IError.ErrorConfigs[IError.ERROR_TYPE.DATA_NOT_FOUND].format()
         } catch (error) {
             console.log('[SimulateTransaction]', error)
-            return null
+            return { error, status: 'ERROR' }
         }
     }
 
-    async executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Types.Nullable<string>> {
+    async executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Interfaces.ResponseData<string>> {
         try {
             const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
             const account = AptosAccount.fromAptosAccountObject(owner)
             const bcsTxn: Uint8Array = await AptosUtil.AptosApiRequest.generateBCSTransaction(account, rawTxn)
             const signedTxn: string = await AptosUtil.AptosApiRequest.submitSignedBCSTransaction(client, bcsTxn)
-            return signedTxn
+            return { data: signedTxn, status: 'SUCCESS' }
         } catch (error) {
             console.log('[simulateTransaction]', error)
-            return null
+            return { error, status: 'ERROR' }
         }
     }
 
@@ -511,11 +539,15 @@ export class AptosTransaction extends BaseProvider {
         try {
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             let status = false
-            if (nodeURL && address) {
-                const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, address)
-                if (resources.status === 'SUCCESS' && resources.data && resources.data.length > 0) {
-                    status = (resources.data.find((n) => n.type === AptosUtil.AptosTokenStore)?.data as any)?.direct_transfer
-                }
+            if (!nodeURL || !address)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    nodeURL,
+                    address,
+                })
+
+            const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, address)
+            if (resources.status === 'SUCCESS' && resources.data && resources.data.length > 0) {
+                status = (resources.data.find((n) => n.type === AptosUtil.AptosTokenStore)?.data as any)?.direct_transfer
             }
             return status
         } catch (error) {
@@ -527,9 +559,13 @@ export class AptosTransaction extends BaseProvider {
         chainId: string,
         owner: VaultTypes.AccountObject,
         allow: boolean
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any>>> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
         try {
-            if (!owner.address || !owner.publicKeyHex) throw new Error('Owner not found')
+            if (!owner.address || !owner.publicKeyHex)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    owner: 'Invalid information',
+                })
+
             const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
             const transactionBuilder = new TransactionBuilderABI(AptosUtil.TOKEN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
             const payload = transactionBuilder.buildTransactionPayload('0x3::token::opt_in_direct_transfer', [], [allow])
@@ -541,18 +577,21 @@ export class AptosTransaction extends BaseProvider {
             const ourOwner = new AptosAccount(fromPrivateKey.toUint8Array())
             const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
             return {
-                rawData: rawTxn,
-                gasLimit: simulateTxn?.[0].max_gas_amount,
-                gasPrice: simulateTxn?.[0].gas_unit_price,
-                transactionFee: simulateTxn?.[0].gas_used,
-                from: owner,
-                to: '',
-                chainId,
-                transactionType: 'script',
-            } as TransactionTypes.SimulateTransaction
+                data: {
+                    rawData: rawTxn,
+                    gasLimit: simulateTxn?.[0].max_gas_amount,
+                    gasPrice: simulateTxn?.[0].gas_unit_price,
+                    transactionFee: simulateTxn?.[0].gas_used,
+                    from: owner,
+                    to: '',
+                    chainId,
+                    transactionType: 'script',
+                } as TransactionTypes.SimulateTransaction,
+                status: 'SUCCESS',
+            }
         } catch (error) {
             console.log('[allowReceiveNFT]', error)
-            return null
+            return { error, status: 'ERROR' }
         }
     }
     async transferNFT(
@@ -563,10 +602,18 @@ export class AptosTransaction extends BaseProvider {
         to: string,
         gasLimit?: string | undefined,
         gasPrice?: string | undefined
-    ): Promise<Types.Nullable<TransactionTypes.SimulateTransaction<any> & TransactionTypes.RawTransferNFTTransaction>> {
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any> & TransactionTypes.RawTransferNFTTransaction>> {
         try {
-            if (!from.address || !from.publicKeyHex) throw new Error('Owner not found')
-            if (NFT.creator.length === 0) throw new Error('NFT creator not found')
+            if (!from.address || !from.publicKeyHex)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    from: 'Invalid information',
+                })
+
+            if (NFT.creator.length === 0)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    NFTCreator: 'Invalid information',
+                })
+
             const client = new AptosClient(AptosUtil.BaseNodeByChainInfo[chainId])
 
             const transactionBuilder = new TransactionBuilderABI(AptosUtil.TOKEN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
@@ -589,23 +636,29 @@ export class AptosTransaction extends BaseProvider {
             const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
             if (simulateTxn.length > 0) {
                 return {
-                    amount,
-                    asset: NFT,
-                    from,
-                    to,
-                    chainId,
-                    gasLimit: simulateTxn[0].max_gas_amount,
-                    gasPrice: simulateTxn[0].gas_unit_price,
-                    transactionFee: simulateTxn[0].gas_used,
-                    rawData: rawTxn,
-                    expirationTimestamp: simulateTxn[0].expiration_timestamp_secs,
-                    transactionType: 'transfer-nft',
+                    data: {
+                        amount,
+                        asset: NFT,
+                        from,
+                        to,
+                        chainId,
+                        gasLimit: simulateTxn[0].max_gas_amount,
+                        gasPrice: simulateTxn[0].gas_unit_price,
+                        transactionFee: simulateTxn[0].gas_used,
+                        rawData: rawTxn,
+                        expirationTimestamp: simulateTxn[0].expiration_timestamp_secs,
+                        transactionType: 'transfer-nft',
+                    },
+                    status: 'SUCCESS',
                 }
             }
-            return null
+            return {
+                error: simulateTxn,
+                status: 'ERROR',
+            }
         } catch (error) {
             console.log('[transferNFT]', error)
-            return null
+            return { error, status: 'ERROR' }
         }
     }
     async fundAccount(chainId: string, to: string, faucetURL: string): Promise<boolean> {

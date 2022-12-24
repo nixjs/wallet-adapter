@@ -152,11 +152,14 @@ export namespace NetworkTypes {
         explorerURL: string
         nativeToken: string
         type: ProviderEnums.Network
+        active?: boolean
+        isFaucetNFT?: boolean
     }
     export type NetworkData = {
         data: Types.Object<Network>
         name: string
         url: string
+        active?: boolean
     }
     export type NetworkByProviders = Record<ProviderEnums.Provider, NetworkData>
 }

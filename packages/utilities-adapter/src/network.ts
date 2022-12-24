@@ -8,11 +8,13 @@ export namespace Network {
             name: 'Aptos Blockchain',
             url: AptosLogo,
             data: AptosNetworks,
+            active: true,
         },
         sui: {
             name: 'SUI Blockchain',
             url: SUILogo,
             data: SUINetworks,
+            active: true,
         },
     }
 }

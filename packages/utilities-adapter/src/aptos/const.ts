@@ -45,6 +45,7 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
         explorerURL: 'https://explorer.aptoslabs.com',
         nativeToken: 'APT',
         type: ProviderEnums.Network.MAIN_NET,
+        active: true,
     },
     [TestnetChain]: {
         chainId: TestnetChain,
@@ -54,6 +55,8 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
         explorerURL: 'https://explorer.aptoslabs.com',
         nativeToken: 'APT',
         type: ProviderEnums.Network.TEST_NET,
+        active: true,
+        isFaucetNFT: true,
     },
     [DevnetChain]: {
         chainId: DevnetChain,
@@ -63,5 +66,7 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
         explorerURL: 'https://explorer.aptoslabs.com',
         nativeToken: 'APT',
         type: ProviderEnums.Network.DEV_NET,
+        active: true,
+        isFaucetNFT: true,
     },
 }

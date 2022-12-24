@@ -47,6 +47,8 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
         explorerURL: 'https://explorer.sui.io',
         nativeToken: 'SUI',
         type: ProviderEnums.Network.TEST_NET,
+        active: true,
+        isFaucetNFT: true,
     },
     [DevnetChain]: {
         chainId: DevnetChain,
@@ -56,5 +58,7 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
         explorerURL: 'https://explorer.sui.io',
         nativeToken: 'SUI',
         type: ProviderEnums.Network.DEV_NET,
+        active: true,
+        isFaucetNFT: true,
     },
 }

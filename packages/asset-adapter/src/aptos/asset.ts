@@ -6,17 +6,18 @@ import { AptosApiRequest } from './api'
 import { DefaultAsset, DefaultAssetBalance } from './const'
 import { RawCoinInfo } from './types'
 import { BaseProvider } from '../base'
+import { AssetAdapterTypes } from '../types'
 
 export class AptosAsset extends BaseProvider {
     public get type(): ProviderEnums.Provider {
         return ProviderEnums.Provider.APTOS
     }
 
-    async getAssets(chainId: string, address: string): Promise<AssetTypes.Asset[]> {
+    async getAssets(chainId: string, request: AssetAdapterTypes.MoveAsset): Promise<AssetTypes.Asset[]> {
         try {
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             const assets: AssetTypes.Asset[] = []
-            if (nodeURL && address) {
+            if (nodeURL && request.data.address) {
                 const rawAssetRes = await AptosApiRequest.getAssetListVerified(nodeURL)
                 const rawCoinInfo: Record<string, RawCoinInfo> = {}
                 if ([200, 201].includes(rawAssetRes.status) && rawAssetRes.data) {
@@ -26,7 +27,7 @@ export class AptosAsset extends BaseProvider {
                         })
                     }
                 }
-                const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, address)
+                const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, request.data.address)
 
                 if (resources.status === 'SUCCESS' && resources.data && resources.data.length > 0) {
                     const ourResources = resources.data
@@ -123,12 +124,12 @@ export class AptosAsset extends BaseProvider {
             return DefaultAssetBalance
         }
     }
-    async getAssetBalances(chainId: string, address: string): Promise<AssetTypes.AssetAmount[]> {
+    async getAssetBalances(chainId: string, request: AssetAdapterTypes.MoveAsset): Promise<AssetTypes.AssetAmount[]> {
         try {
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
             const balances: AssetTypes.AssetAmount[] = []
-            if (nodeURL && address) {
-                const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, address)
+            if (nodeURL && request.data.address) {
+                const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, request.data.address)
                 if (resources.status === 'SUCCESS' && resources.data && resources.data.length > 0) {
                     const ourResources = resources.data.filter((n) => n.type.includes(AptosUtil.BaseCoinStore))
                     for (let index = 0; index < ourResources.length; index++) {

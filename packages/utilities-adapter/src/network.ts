@@ -1,6 +1,7 @@
 import { NetworkTypes } from './types'
 import { Networks as AptosNetworks, BaseIconURL as AptosLogo } from './aptos'
 import { Networks as SUINetworks, BaseIconURL as SUILogo } from './sui'
+import { Networks as EthereumNetworks, BaseIconURL as EthereumLogo } from './ethereum'
 
 export namespace Network {
     export const NetworkByProviders: NetworkTypes.NetworkByProviders = {
@@ -15,6 +16,11 @@ export namespace Network {
             url: SUILogo,
             data: SUINetworks,
             active: true,
+        },
+        ethereum: {
+            name: 'Ethereum Blockchain',
+            url: EthereumLogo,
+            data: EthereumNetworks,
         },
     }
 }

@@ -4,6 +4,7 @@ import uniqBy from 'lodash-es/uniqBy'
 import { SUIApiRequest } from './api'
 import { DefaultAsset, DefaultAssetBalance } from './const'
 import { BaseProvider } from '../base'
+import { AssetAdapterTypes } from '../types'
 
 export type CoinObject = {
     objectId: string
@@ -19,15 +20,15 @@ export class SUIAsset extends BaseProvider {
         return ProviderEnums.Provider.SUI
     }
 
-    async getAssets(chainId: string, address: string): Promise<AssetTypes.Asset[]> {
+    async getAssets(chainId: string, request: AssetAdapterTypes.MoveAsset): Promise<AssetTypes.Asset[]> {
         try {
             const nodeURL = SUIUtil.BaseNodeByChainInfo[chainId]
             const assets: AssetTypes.Asset[] = [DefaultAsset]
             const query = new JsonRpcProvider(nodeURL, {
                 skipDataValidation: false,
             })
-            if (nodeURL && address) {
-                const coins = await SUIApiRequest.getOwnedCoins(query, address)
+            if (nodeURL && request.data.address) {
+                const coins = await SUIApiRequest.getOwnedCoins(query, request.data.address)
                 const result = uniqBy(coins, 'symbol').map(
                     (c) =>
                         ({
@@ -62,11 +63,11 @@ export class SUIAsset extends BaseProvider {
         }
     }
 
-    async getAssetBalances(chainId: string, address: string): Promise<AssetTypes.AssetAmount[]> {
+    async getAssetBalances(chainId: string, request: AssetAdapterTypes.MoveAsset): Promise<AssetTypes.AssetAmount[]> {
         try {
             const nodeURL = SUIUtil.BaseNodeByChainInfo[chainId]
-            if (nodeURL && address) {
-                const balances = await SUIApiRequest.getCoinsBalance(nodeURL, address)
+            if (nodeURL && request.data.address) {
+                const balances = await SUIApiRequest.getCoinsBalance(nodeURL, request.data.address)
                 return balances
             }
             return [DefaultAssetBalance]

@@ -2,6 +2,7 @@ export namespace ProviderEnums {
     export enum Provider {
         APTOS = 'aptos',
         SUI = 'sui',
+        ETHEREUM = 'ethereum',
     }
     export enum Network {
         DEV_NET = 'devnet',

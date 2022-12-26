@@ -1,21 +1,21 @@
-import { Types, Interfaces } from '@nixjs23n6/types'
+import { Interfaces } from '@nixjs23n6/types'
 import { AssetTypes, Helper } from '@nixjs23n6/utilities-adapter'
 import { OwnedNftsResponse, TokenBalancesResponse } from 'alchemy-sdk'
 import axios from 'axios'
-import { BaseProvider } from '../base'
+import { BaseProvider, Config } from '../base'
 import { AlchemyResponse } from './types'
 
 export class AlchemyProvider extends BaseProvider {
-    constructor(APIKey: Types.Object<string>, url: string) {
-        super(APIKey, url)
+    constructor(config: Config, chainId: string) {
+        super(config, chainId)
     }
 
-    async getAssets(chainId: string, address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
+    async getAssets(address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
         try {
             const assets: AssetTypes.Asset[] = []
 
             const response = await axios.post<AlchemyResponse<TokenBalancesResponse>>(
-                this.getUrl(chainId) as string,
+                `${this.config.endpoint}/${this.config.apiKey}`,
                 [`${address}`, 'erc20'],
                 {
                     headers: this.contentType,
@@ -45,12 +45,12 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getAssetBalances(chainId: string, address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>> {
+    async getAssetBalances(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>> {
         try {
             const amounts: AssetTypes.AssetAmount[] = []
 
             const response = await axios.post<AlchemyResponse<TokenBalancesResponse>>(
-                this.getUrl(chainId) as string,
+                `${this.config.endpoint}/${this.config.apiKey}`,
                 [`${address}`, 'erc20'],
                 {
                     headers: this.contentType,
@@ -65,7 +65,7 @@ export class AlchemyProvider extends BaseProvider {
                         const { address, decimals } = token
                         amounts.push({
                             assetId: address,
-                            amount: x.tokenBalance ? Helper.Decimal.fromDecimal(x.tokenBalance, decimals) : 0,
+                            amount: x.tokenBalance ? Helper.Decimal.fromDecimal(x.tokenBalance, decimals) : '0',
                         } as AssetTypes.AssetAmount)
                     }
                 })
@@ -76,11 +76,11 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getNFTs(chainId: string, address: string): Promise<Interfaces.ResponseData<AssetTypes.NFT[]>> {
+    async getNFTs(address: string): Promise<Interfaces.ResponseData<AssetTypes.NFT[]>> {
         try {
-            const amounts: AssetTypes.NFT[] = []
+            const nfts: AssetTypes.NFT[] = []
 
-            const response = await axios.get<OwnedNftsResponse>(`${this.getUrl(chainId) as string}/getNFTs?owner=${address}`, {
+            const response = await axios.get<OwnedNftsResponse>(`${this.config.endpoint}/${this.config.apiKey}/getNFTs?owner=${address}`, {
                 headers: this.contentType,
             })
 
@@ -88,7 +88,7 @@ export class AlchemyProvider extends BaseProvider {
                 const { ownedNfts } = response.data
                 ownedNfts.forEach((x) => {
                     const { title, tokenUri, tokenId, description, contract } = x
-                    amounts.push({
+                    nfts.push({
                         collection: '',
                         creator: contract.address,
                         description,
@@ -99,7 +99,7 @@ export class AlchemyProvider extends BaseProvider {
                     } as AssetTypes.NFT)
                 })
             }
-            return { status: 'SUCCESS', data: amounts }
+            return { status: 'SUCCESS', data: nfts }
         } catch (error) {
             return { error, status: 'ERROR' }
         }

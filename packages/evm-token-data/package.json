@@ -1,5 +1,5 @@
 {
-    "name": "@nixjs23n6/token-data-fetching",
+    "name": "@nixjs23n6/evm-token-data",
     "version": "1.2.13",
     "description": "Fetch token data",
     "sideEffects": false,
@@ -41,6 +41,7 @@
         "@nixjs23n6/types": "^1.0.15",
         "@nixjs23n6/utilities-adapter": "^1.2.13",
         "alchemy-sdk": "^2.2.5",
-        "axios": ">1.1.0"
+        "axios": ">1.1.0",
+        "moralis": "^2.10.3"
     }
 }

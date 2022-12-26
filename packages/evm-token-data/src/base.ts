@@ -1,7 +1,6 @@
 import { Types, Interfaces } from '@nixjs23n6/types'
-import { AssetTypes } from '@nixjs23n6/utilities-adapter'
+import { AssetTypes, EVMUtil } from '@nixjs23n6/utilities-adapter'
 import { TokenDateTypes } from './types'
-import * as TokenList from './erc20-list.json'
 
 export interface ConfigData {
     apiKey: string
@@ -28,7 +27,7 @@ export abstract class BaseProvider {
     }
 
     public get tokens(): TokenDateTypes.Token[] {
-        return TokenList.tokens
+        return EVMUtil.Erc20Tokens
     }
 
     public get chainId(): string {
@@ -46,7 +45,7 @@ export abstract class BaseProvider {
     }
 
     public get tokensByChain(): TokenDateTypes.Token[] {
-        return (TokenList.tokens as Array<TokenDateTypes.Token>).filter((t) => t.chainId === Number(this.#chainId))
+        return EVMUtil.Erc20Tokens.filter((t) => t.chainId === Number(this.#chainId))
     }
 
     getTokenInfo(address: string): Types.Undefined<TokenDateTypes.Token> {

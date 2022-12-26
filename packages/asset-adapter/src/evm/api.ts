@@ -1,26 +1,10 @@
 import { Types } from '@nixjs23n6/types'
-import { EthereumUtil, Helper } from '@nixjs23n6/utilities-adapter'
-import axios from 'axios'
+import { EVMUtil, Helper } from '@nixjs23n6/utilities-adapter'
 import { Contract, getDefaultProvider, providers, utils, BigNumber } from 'ethers'
-import * as TokenList from './erc20-list.json'
 
 const ETCChainId = '0x3D'
 
 export namespace EthereumApiRequest {
-    export function getTokens(): {
-        chainId: number
-        address: string
-        name: string
-        symbol: string
-        decimals: number
-        logoURI: string
-        extensions: {
-            optimismBridgeAddress: string
-        }
-    }[] {
-        return TokenList.tokens
-    }
-
     export function getTokenInfo(address: string): Types.Undefined<{
         chainId: number
         address: string
@@ -32,11 +16,11 @@ export namespace EthereumApiRequest {
             optimismBridgeAddress: string
         }
     }> {
-        return (TokenList.tokens as Array<any>).find((t) => t.address === address)
+        return EVMUtil.Erc20Tokens.find((t) => t.address === address)
     }
 
     export function getProvider(chainId: string): providers.BaseProvider {
-        const nodeURL = EthereumUtil.BaseNodeByChainInfo[chainId]
+        const nodeURL = EVMUtil.BaseNodeByChainInfo[chainId]
         const provider =
             chainId !== ETCChainId
                 ? getDefaultProvider(nodeURL)
@@ -93,50 +77,6 @@ export namespace EthereumApiRequest {
             const balance = await getERC20TokenBalance(chainId, assetId, address) // eslint-disable-line no-await-in-loop
             result[assetId] = balance
         }
-        return result
-    }
-
-    export async function getAllERC20TokensBalance(address: string): Promise<Types.Object<string>> {
-        const result: Types.Object<string> = {}
-
-        const data = JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'alchemy_getTokenBalances',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            params: [`${address}`, 'erc20'],
-            id: 42,
-        })
-
-        const response = await axios
-            .post('https://eth-goerli.g.alchemy.com/v2/cCqOfbVMXtJ81nL8A6sPgq-g-auk5wkP', {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                data: data,
-            })
-            .catch((e: Error) => {
-                return e
-            })
-        if (response instanceof Error) {
-            return result
-        }
-
-        const arr = response.data?.result
-            ? (response.data.result as {
-                  address: string
-                  tokenBalances: Array<{ contractAddress: string; tokenBalance: string }>
-              })
-            : { tokenBalances: [] }
-
-        arr.tokenBalances.forEach((x) => {
-            const token = getTokenInfo(x.contractAddress)
-            let dec = 0
-            if (token) dec = token.decimals
-            result[x.contractAddress] = Helper.Decimal.fromDecimal(x.tokenBalance, dec)
-        })
-
         return result
     }
 }

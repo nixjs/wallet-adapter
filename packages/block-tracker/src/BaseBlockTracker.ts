@@ -25,19 +25,19 @@ export interface Block {
 export abstract class BaseBlockTracker extends SafeEventEmitter {
     protected _isRunning: boolean
 
-    private _blockResetDuration: number
+    #blockResetDuration: number
 
-    private _currentBlock: Block | null
+    #currentBlock: Block | null
 
-    private _blockResetTimeout?: ReturnType<typeof setTimeout>
+    #blockResetTimeout?: ReturnType<typeof setTimeout>
 
     constructor(opts: BaseBlockTrackerArgs) {
         super()
 
         // config
-        this._blockResetDuration = opts.blockResetDuration || 20 * sec
+        this.#blockResetDuration = opts.blockResetDuration || 20 * sec
         // state
-        this._currentBlock = null
+        this.#currentBlock = null
         this._isRunning = false
 
         // bind functions for internal use
@@ -60,13 +60,13 @@ export abstract class BaseBlockTracker extends SafeEventEmitter {
     }
 
     getCurrentBlock(): Block | null {
-        return this._currentBlock
+        return this.#currentBlock
     }
 
     async getLatestBlock(): Promise<Block> {
         // return if available
-        if (this._currentBlock) {
-            return this._currentBlock
+        if (this.#currentBlock) {
+            return this.#currentBlock
         }
         // wait for a new latest block
         const latestBlock: Block = await new Promise((resolve) => this.once('latest', resolve))
@@ -151,7 +151,7 @@ export abstract class BaseBlockTracker extends SafeEventEmitter {
     }
 
     protected _newPotentialLatest(newBlock: Block): void {
-        const currentBlock = this._currentBlock
+        const currentBlock = this.#currentBlock
         // only update if blok number is higher
         if (currentBlock && hexToInt(newBlock.version) <= hexToInt(currentBlock.version)) {
             return
@@ -160,8 +160,8 @@ export abstract class BaseBlockTracker extends SafeEventEmitter {
     }
 
     private _setCurrentBlock(newBlock: Block): void {
-        const oldBlock = this._currentBlock
-        this._currentBlock = newBlock
+        const oldBlock = this.#currentBlock
+        this.#currentBlock = newBlock
         this.emit('latest', newBlock)
         this.emit('sync', { oldBlock, newBlock })
     }
@@ -170,22 +170,22 @@ export abstract class BaseBlockTracker extends SafeEventEmitter {
         // clear any existing timeout
         this._cancelBlockResetTimeout()
         // clear latest block when stale
-        this._blockResetTimeout = setTimeout(this._resetCurrentBlock, this._blockResetDuration)
+        this.#blockResetTimeout = setTimeout(this._resetCurrentBlock, this.#blockResetDuration)
 
         // nodejs - dont hold process open
-        if (this._blockResetTimeout.unref) {
-            this._blockResetTimeout.unref()
+        if (this.#blockResetTimeout.unref) {
+            this.#blockResetTimeout.unref()
         }
     }
 
     private _cancelBlockResetTimeout(): void {
-        if (this._blockResetTimeout) {
-            clearTimeout(this._blockResetTimeout)
+        if (this.#blockResetTimeout) {
+            clearTimeout(this.#blockResetTimeout)
         }
     }
 
     private _resetCurrentBlock(): void {
-        this._currentBlock = null
+        this.#currentBlock = null
     }
 }
 

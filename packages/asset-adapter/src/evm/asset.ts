@@ -20,6 +20,9 @@ export class EthereumAsset extends BaseProvider {
 
     async getAssets(chainId: string, request: AssetAdapterTypes.EthereumAsset): Promise<AssetTypes.Asset[]> {
         try {
+            console.warn(
+                'This method only support has contract address list. If you want to fetch get ERC20 token by wallet, you can use the @nixjs23n6/evm-token-data package'
+            )
             const assets: AssetTypes.Asset[] = []
             const { contractAddress } = request.data
             if (contractAddress.length > 0) {
@@ -60,6 +63,9 @@ export class EthereumAsset extends BaseProvider {
 
     async getAssetBalances(chainId: string, request: AssetAdapterTypes.EthereumAsset): Promise<AssetTypes.AssetAmount[]> {
         try {
+            console.warn(
+                'This method only support has contract address list. If you want to get ERC20 token balance by wallet, you can use the @nixjs23n6/evm-token-data package'
+            )
             const { contractAddress } = request.data
             const balances: AssetTypes.AssetAmount[] = []
 
@@ -86,6 +92,7 @@ export class EthereumAsset extends BaseProvider {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async getNFTs(_chainId: string, _address: string): Promise<AssetTypes.NFT[]> {
         try {
+            console.warn('Use the @nixjs23n6/evm-token-data package to get NFTs by wallet')
             return []
         } catch (error) {
             console.log('[getNFTs]', error)

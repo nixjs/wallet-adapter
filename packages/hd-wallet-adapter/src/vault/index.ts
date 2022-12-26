@@ -3,26 +3,26 @@ import { ProviderEnums, VaultTypes } from '@nixjs23n6/utilities-adapter'
 import { BaseProvider } from './base'
 
 export class Vault {
-    private readonly _classes: Types.Class[]
-    private _container: Types.Object<any> = {}
-    private _currentType?: ProviderEnums.Provider
-    private _prevType?: ProviderEnums.Provider
-    private _mnemonic?: string
+    readonly #classes: Types.Class[]
+    #container: Types.Object<any> = {}
+    #currentType?: ProviderEnums.Provider
+    #prevType?: ProviderEnums.Provider
+    #mnemonic?: string
 
     constructor(args: Types.Class[], mnemonics?: string) {
-        this._classes = args
-        this._mnemonic = mnemonics
+        this.#classes = args
+        this.#mnemonic = mnemonics
     }
 
     async generateHDWallets(): Promise<Record<string, VaultTypes.AccountObject & { path: string }> | null> {
         try {
-            if (this._classes.length > 0 && this._mnemonic) {
+            if (this.#classes.length > 0 && this.#mnemonic) {
                 const accounts: Record<string, VaultTypes.AccountObject & { path: string }> = {}
 
-                for (let index = 0; index < this._classes.length; index++) {
-                    const Provider: Types.Class = this._classes[index]
+                for (let index = 0; index < this.#classes.length; index++) {
+                    const Provider: Types.Class = this.#classes[index]
                     const instance: BaseProvider = new Provider()
-                    const account = await instance.getAccountFromMnemonic(0, this._mnemonic)
+                    const account = await instance.getAccountFromMnemonic(0, this.#mnemonic)
                     Object.assign(accounts, {
                         [Provider.prototype.type]: account,
                     })
@@ -70,60 +70,60 @@ export class Vault {
         if ((Object.values(ProviderEnums.Provider) as string[]).includes(type) === false) {
             throw new Error('Parameter invalid.')
         }
-        this._currentType = type
-        if (this._prevType !== this._currentType) {
-            this._prevType && this.destroy(this._prevType)
-            for (let index = 0; index < this._classes.length; index++) {
-                const Provider: Types.Class = this._classes[index]
+        this.#currentType = type
+        if (this.#prevType !== this.#currentType) {
+            this.#prevType && this.destroy(this.#prevType)
+            for (let index = 0; index < this.#classes.length; index++) {
+                const Provider: Types.Class = this.#classes[index]
                 if (Provider.prototype.type && Provider.prototype.type === type) {
-                    this._container[type] = Provider
+                    this.#container[type] = Provider
                     break
                 }
             }
-            this._prevType = type
-            console.log('» [Vault]Connect new provider:  %c' + this._currentType, 'color: #FABB51; font-size:14px')
+            this.#prevType = type
+            console.log('» [Vault]Connect new provider:  %c' + this.#currentType, 'color: #FABB51; font-size:14px')
         } else {
-            console.log('» [Vault]Continue to connect the current provider:  %c' + this._prevType, 'color: #FABB51; font-size:14px')
+            console.log('» [Vault]Continue to connect the current provider:  %c' + this.#prevType, 'color: #FABB51; font-size:14px')
         }
     }
 
     destroy(type?: ProviderEnums.Provider): void {
         try {
-            let t: Types.Undefined<ProviderEnums.Provider> = this._currentType
+            let t: Types.Undefined<ProviderEnums.Provider> = this.#currentType
             if (type) {
                 t = type
             }
             if (!t) {
                 throw new Error('Provider type not found')
             }
-            delete this._container[t]
+            delete this.#container[t]
         } catch (error) {
             throw new Error('The instance is not found to delete.')
         }
     }
 
     get container(): Types.Object<any> {
-        return this._container
+        return this.#container
     }
 
     get instance(): BaseProvider {
-        return this._currentType ? new this._container[this._currentType]() : null
+        return this.#currentType ? new this.#container[this.#currentType]() : null
     }
 
     set prevType(v: Types.Undefined<ProviderEnums.Provider>) {
-        this._prevType = v
+        this.#prevType = v
     }
 
     get prevType(): Types.Undefined<ProviderEnums.Provider> {
-        return (this._prevType as ProviderEnums.Provider) || undefined
+        return (this.#prevType as ProviderEnums.Provider) || undefined
     }
 
     set currentType(v: Types.Undefined<ProviderEnums.Provider>) {
-        this._currentType = v
+        this.#currentType = v
     }
 
     get currentType(): Types.Undefined<ProviderEnums.Provider> {
-        return (this._currentType as ProviderEnums.Provider) || undefined
+        return (this.#currentType as ProviderEnums.Provider) || undefined
     }
 }
 

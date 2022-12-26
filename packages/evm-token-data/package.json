@@ -1,6 +1,6 @@
 {
     "name": "@nixjs23n6/evm-token-data",
-    "version": "1.2.13",
+    "version": "1.2.14",
     "description": "Fetch token data",
     "sideEffects": false,
     "main": "lib/cjs/index.js",
@@ -39,7 +39,7 @@
     },
     "dependencies": {
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^1.2.13",
+        "@nixjs23n6/utilities-adapter": "^1.2.14",
         "alchemy-sdk": "^2.2.5",
         "axios": ">1.1.0",
         "moralis": "^2.10.3"

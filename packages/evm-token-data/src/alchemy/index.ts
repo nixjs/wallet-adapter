@@ -1,8 +1,11 @@
 import { Interfaces } from '@nixjs23n6/types'
 import { AssetTypes, Helper } from '@nixjs23n6/utilities-adapter'
-import { OwnedNftsResponse, TokenBalancesResponse } from 'alchemy-sdk'
+import { OwnedNftsResponse, TokenBalancesResponse, TokenMetadataResponse } from 'alchemy-sdk'
 import axios from 'axios'
 import { BaseProvider, Config } from '../base'
+import { decodeInputDataFromABIs } from '../utils'
+import { Erc20TokenBalance, NFT } from './types'
+import { EvmTypes } from '../types'
 import { AlchemyResponse } from './types'
 
 export class AlchemyProvider extends BaseProvider {
@@ -100,6 +103,43 @@ export class AlchemyProvider extends BaseProvider {
                 })
             }
             return { status: 'SUCCESS', data: nfts }
+        } catch (error) {
+            return { error, status: 'ERROR' }
+        }
+    }
+
+    async getTransactions(address: string, size?: number | undefined): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>> {}
+
+    async getERC20MetaData(address: string): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
+        try {
+            const response = await axios.post<AlchemyResponse<TokenMetadataResponse>>(
+                `${this.config.endpoint}/${this.config.apiKey}`,
+                {
+                    id: new Date().getTime(),
+                    jsonrpc: '2.0',
+                    method: 'alchemy_getTokenMetadata',
+                    params: [address],
+                },
+                {
+                    headers: this.contentType,
+                }
+            )
+
+            if (response.data && response.data.result) {
+                const { decimals, logo, name, symbol } = response.data.result
+                return {
+                    status: 'SUCCESS',
+                    data: {
+                        address,
+                        chainId: this.chainId,
+                        decimals: decimals || 18,
+                        logoURI: logo || '',
+                        name: name || '',
+                        symbol: symbol || '',
+                    },
+                }
+            }
+            throw new Error('Data not found')
         } catch (error) {
             return { error, status: 'ERROR' }
         }

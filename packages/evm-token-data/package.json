@@ -38,10 +38,13 @@
         "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
     },
     "dependencies": {
+        "@nixjs23n6/transaction-adapter": "^1.2.14",
         "@nixjs23n6/types": "^1.0.15",
         "@nixjs23n6/utilities-adapter": "^1.2.14",
         "alchemy-sdk": "^2.2.5",
         "axios": ">1.1.0",
+        "bignumber.js": "^9.1.0",
+        "ethers": "^5.7.2",
         "moralis": "^2.10.3"
     }
 }

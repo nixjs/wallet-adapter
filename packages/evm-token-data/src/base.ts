@@ -1,6 +1,6 @@
 import { Types, Interfaces } from '@nixjs23n6/types'
-import { AssetTypes, EVMUtil } from '@nixjs23n6/utilities-adapter'
-import { TokenDateTypes } from './types'
+import { AssetTypes, EVMUtil, TransactionTypes, ProviderEnums } from '@nixjs23n6/utilities-adapter'
+import { EvmTypes } from './types'
 
 export interface ConfigData {
     apiKey: string
@@ -26,7 +26,7 @@ export abstract class BaseProvider {
         this.#configData = this.#config[this.#chainId]
     }
 
-    public get tokens(): TokenDateTypes.Token[] {
+    public get tokens(): EvmTypes.ERC20[] {
         return EVMUtil.Erc20Tokens
     }
 
@@ -44,15 +44,17 @@ export abstract class BaseProvider {
         return this.#configData
     }
 
-    public get tokensByChain(): TokenDateTypes.Token[] {
+    public get tokensByChain(): EvmTypes.ERC20[] {
         return EVMUtil.Erc20Tokens.filter((t) => t.chainId === Number(this.#chainId))
     }
 
-    getTokenInfo(address: string): Types.Undefined<TokenDateTypes.Token> {
+    public getTokenInfo(address: string): Types.Undefined<EvmTypes.ERC20> {
         return this.tokensByChain.find((t) => t.address === address)
     }
 
     abstract getAssets(address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>>
     abstract getAssetBalances(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>>
     abstract getNFTs(address: string): Promise<Interfaces.ResponseData<AssetTypes.NFT[]>>
+    abstract getTransactions(address: string, size?: number): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>>
+    abstract getERC20MetaData(address: string): Promise<Interfaces.ResponseData<EvmTypes.ERC20>>
 }

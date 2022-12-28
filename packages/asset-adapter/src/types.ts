@@ -1,5 +1,3 @@
-import { ProviderEnums } from '@nixjs23n6/utilities-adapter'
-
 export namespace AssetAdapterTypes {
     export type MoveAssetData = { address: string }
     export type MoveAsset = {

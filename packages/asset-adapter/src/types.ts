@@ -5,11 +5,11 @@ export namespace AssetAdapterTypes {
         data: MoveAssetData
     }
 
-    export type EthereumAssetData = { address: string; contractAddress: Array<string> }
-    export type EthereumAsset = {
+    export type EVMAssetData = { address: string; contractAddress: Array<string> }
+    export type EVMAsset = {
         kind: 'eth'
-        data: EthereumAssetData
+        data: EVMAssetData
     }
 
-    export type AssetRequest = MoveAsset | EthereumAsset
+    export type AssetRequest = MoveAsset | EVMAsset
 }

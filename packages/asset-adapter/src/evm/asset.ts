@@ -6,9 +6,9 @@ import { BaseProvider } from '../base'
 import { AssetAdapterTypes } from '../types'
 import { EthereumApiRequest } from './api'
 
-export class EthereumAsset extends BaseProvider {
+export class EVMAsset extends BaseProvider {
     public get type(): ProviderEnums.Provider {
-        return ProviderEnums.Provider.ETHEREUM
+        return ProviderEnums.Provider.EVM
     }
 
     getProvider(chainId: string): providers.BaseProvider {
@@ -18,7 +18,7 @@ export class EthereumAsset extends BaseProvider {
         return provider
     }
 
-    async getAssets(chainId: string, request: AssetAdapterTypes.EthereumAsset): Promise<AssetTypes.Asset[]> {
+    async getAssets(chainId: string, request: AssetAdapterTypes.EVMAsset): Promise<AssetTypes.Asset[]> {
         try {
             console.warn(
                 'This method only support has contract address list. If you want to fetch get ERC20 token by wallet, you can use the @nixjs23n6/evm-token-data package'
@@ -61,7 +61,7 @@ export class EthereumAsset extends BaseProvider {
         }
     }
 
-    async getAssetBalances(chainId: string, request: AssetAdapterTypes.EthereumAsset): Promise<AssetTypes.AssetAmount[]> {
+    async getAssetBalances(chainId: string, request: AssetAdapterTypes.EVMAsset): Promise<AssetTypes.AssetAmount[]> {
         try {
             console.warn(
                 'This method only support has contract address list. If you want to get ERC20 token balance by wallet, you can use the @nixjs23n6/evm-token-data package'

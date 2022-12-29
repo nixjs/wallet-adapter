@@ -1,10 +1,10 @@
 export class EvmChain {
     /**
-     * Returns ETHEREUM chain
+     * Returns EVM chain
      *
-     * @example EvmChain.ETHEREUM
+     * @example EvmChain.EVM
      */
-    public static get ETHEREUM() {
+    public static get EVM() {
         return EvmChain.create(1)
     }
 

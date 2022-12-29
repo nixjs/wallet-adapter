@@ -17,7 +17,7 @@ export const SepoliaNodeURL = 'https://sepolia.infura.io/v3'
 export const PolygonNodeURL = 'https://polygon-rpc.com'
 export const PolygonMumbaiNodeURL = 'https://rpc-mumbai.maticvigil.com'
 
-export const MainnetChain = EvmChain.ETHEREUM
+export const MainnetChain = EvmChain.EVM
 export const GoerliChain = EvmChain.GOERLI
 export const SepoliaChain = EvmChain.SEPOLIA
 export const PolygonChain = EvmChain.POLYGON

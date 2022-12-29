@@ -50,7 +50,6 @@ export function decodeTransactionLog(ABI: JsonFragment[], logs: { topics: Array<
                 events.push({ name, args: request, original: event })
             }
         } catch (error) {
-            console.log(error)
             // event not found, find in next abi
         }
     })
@@ -79,7 +78,6 @@ export function decodeInputData(ABI: JsonFragment[], inputData: string): Types.N
         }
         return { name, args: request, original }
     } catch (error) {
-        console.log(error)
         return null
     }
 }

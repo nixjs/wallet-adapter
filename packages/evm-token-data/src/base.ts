@@ -49,11 +49,12 @@ export abstract class BaseProvider {
     }
 
     public getTokenInfo(address: string): Types.Undefined<EvmTypes.ERC20> {
-        return this.tokensByChain.find((t) => t.address === address)
+        return this.tokensByChain.find((t) => t.address.toLowerCase() === address.toLowerCase())
     }
 
     abstract getAssets(address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>>
     abstract getAssetBalances(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>>
+    abstract getNativeAssetBalance(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>>
     abstract getNFTs(address: string): Promise<Interfaces.ResponseData<AssetTypes.NFT[]>>
     abstract getTransactions(address: string, size?: number): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>>
     abstract getERC20MetaData(address: string): Promise<Interfaces.ResponseData<EvmTypes.ERC20>>

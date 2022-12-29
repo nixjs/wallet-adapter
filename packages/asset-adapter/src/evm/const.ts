@@ -3,7 +3,7 @@ import { AssetTypes, EVMUtil } from '@nixjs23n6/utilities-adapter'
 export const DefaultAsset: AssetTypes.Asset = {
     assetId: 'ETH',
     name: 'ETH',
-    symbol: 'ETH Coin',
+    symbol: 'ETH',
     decimals: EVMUtil.BaseDecimals,
     logoUrl: EVMUtil.BaseIconURL,
     isNative: true,

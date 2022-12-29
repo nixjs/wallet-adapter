@@ -7,7 +7,7 @@ export namespace EvmTypes {
         address: string
         name: string
         symbol: string
-        decimals: number
+        decimals: number | string
         logoURI: string
         extensions?: Types.Object<string>
     }

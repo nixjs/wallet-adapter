@@ -1,5 +1,5 @@
 import { Interfaces, Types } from '@nixjs23n6/types'
-import { AssetTypes, Helper, TransactionEnums, TransactionTypes, EVMUtil } from '@nixjs23n6/utilities-adapter'
+import { AssetTypes, TransactionEnums, TransactionTypes, EVMUtil } from '@nixjs23n6/utilities-adapter'
 import {
     OwnedNftsResponse,
     TokenBalancesResponse,
@@ -9,15 +9,11 @@ import {
     Nft,
 } from 'alchemy-sdk'
 import axios from 'axios'
-import { BaseProvider, Config } from '../base'
+import { BaseProvider } from '../base'
 import { EvmTypes } from '../types'
 import { AlchemyResponse } from './types'
 
 export class AlchemyProvider extends BaseProvider {
-    constructor(config: Config, chainId: string) {
-        super(config, chainId)
-    }
-
     async getAssets(address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
         try {
             const assets: AssetTypes.Asset[] = []
@@ -70,15 +66,45 @@ export class AlchemyProvider extends BaseProvider {
                 tokenBalances.forEach((x) => {
                     const token = this.getTokenInfo(x.contractAddress)
                     if (token) {
-                        const { address, decimals } = token
+                        const { address } = token
                         amounts.push({
                             assetId: address,
-                            amount: x.tokenBalance ? Helper.Decimal.fromDecimal(x.tokenBalance, decimals) : '0',
+                            amount: x.tokenBalance ? x.tokenBalance : '0',
                         } as AssetTypes.AssetAmount)
                     }
                 })
             }
             return { status: 'SUCCESS', data: amounts }
+        } catch (error) {
+            return { error, status: 'ERROR' }
+        }
+    }
+
+    async getNativeAssetBalance(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>> {
+        try {
+            const response = await axios.post<AlchemyResponse<string>>(
+                `${this.config.endpoint}/v2/${this.config.apiKey}`,
+                {
+                    jsonrpc: '2.0',
+                    id: new Date().getTime(),
+                    method: 'eth_getBalance',
+                    params: [address, 'latest'],
+                },
+                {
+                    headers: this.contentType,
+                }
+            )
+
+            if (response.data && response.data.result) {
+                return {
+                    status: 'SUCCESS',
+                    data: {
+                        assetId: EVMUtil.CoinSymbol,
+                        amount: String(Number(response.data.result || 0)),
+                    } as AssetTypes.AssetAmount,
+                }
+            }
+            throw new Error('Data not found')
         } catch (error) {
             return { error, status: 'ERROR' }
         }
@@ -156,10 +182,9 @@ export class AlchemyProvider extends BaseProvider {
                             category === AssetTransfersCategory.INTERNAL ||
                             category === AssetTransfersCategory.ERC20) &&
                         value &&
-                        value > 0 &&
-                        rawContract.decimal
+                        value > 0
                     ) {
-                        balance = Helper.Decimal.fromDecimal(String(value), Number(rawContract.decimal))
+                        balance = String(value)
                     }
 
                     if (category === AssetTransfersCategory.EXTERNAL || category === AssetTransfersCategory.INTERNAL) {

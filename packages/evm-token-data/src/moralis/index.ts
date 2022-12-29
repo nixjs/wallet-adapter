@@ -1,18 +1,14 @@
 import { Interfaces, Types } from '@nixjs23n6/types'
-import { AssetTypes, Helper, TransactionTypes, TransactionEnums, EVMUtil } from '@nixjs23n6/utilities-adapter'
+import { AssetTypes, TransactionTypes, TransactionEnums, EVMUtil } from '@nixjs23n6/utilities-adapter'
 import Bignumber from 'bignumber.js'
 import { GetTransactionJSONResponse } from 'moralis/common-evm-utils'
 import axios from 'axios'
-import { BaseProvider, Config } from '../base'
+import { BaseProvider } from '../base'
 import { decodeInputDataFromABIs } from '../utils'
 import { Erc20TokenBalance, NFT } from './types'
 import { EvmTypes } from '../types'
 
 export class MoralisProvider extends BaseProvider {
-    constructor(config: Config, chainId: string) {
-        super(config, chainId)
-    }
-
     public get contentType(): Record<string, string> {
         return {
             accept: 'application/json',
@@ -23,8 +19,7 @@ export class MoralisProvider extends BaseProvider {
     async getAssets(address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
         try {
             const assets: AssetTypes.Asset[] = []
-
-            const response = await axios.get<Erc20TokenBalance[]>(`${this.config.apiKey}/${address}/erc20`, {
+            const response = await axios.get<Erc20TokenBalance[]>(`${this.config.endpoint}/${address}/erc20`, {
                 headers: this.contentType,
                 params: {
                     chain: this.chainId,
@@ -53,7 +48,7 @@ export class MoralisProvider extends BaseProvider {
         try {
             const amounts: AssetTypes.AssetAmount[] = []
 
-            const response = await axios.get<Erc20TokenBalance[]>(`${this.config.apiKey}/${address}/erc20`, {
+            const response = await axios.get<Erc20TokenBalance[]>(`${this.config.endpoint}/${address}/erc20`, {
                 headers: this.contentType,
                 params: {
                     chain: this.chainId,
@@ -61,14 +56,38 @@ export class MoralisProvider extends BaseProvider {
             })
 
             if (response.data && response.data) {
-                response.data.forEach(({ decimals, token_address, balance }) => {
+                response.data.forEach(({ token_address, balance }) => {
                     amounts.push({
                         assetId: token_address,
-                        amount: balance ? Helper.Decimal.fromDecimal(balance, decimals) : '0',
+                        amount: balance || '0',
                     } as AssetTypes.AssetAmount)
                 })
             }
             return { status: 'SUCCESS', data: amounts }
+        } catch (error) {
+            return { error, status: 'ERROR' }
+        }
+    }
+
+    async getNativeAssetBalance(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>> {
+        try {
+            const response = await axios.get<{ balance: string }>(`${this.config.endpoint}/${address}/balance`, {
+                headers: this.contentType,
+                params: {
+                    chain: this.chainId,
+                },
+            })
+
+            if (response.data && response.data) {
+                return {
+                    status: 'SUCCESS',
+                    data: {
+                        assetId: EVMUtil.CoinSymbol,
+                        amount: response.data.balance || '0',
+                    } as AssetTypes.AssetAmount,
+                }
+            }
+            throw new Error('Data not found')
         } catch (error) {
             return { error, status: 'ERROR' }
         }
@@ -79,7 +98,7 @@ export class MoralisProvider extends BaseProvider {
             const nfts: AssetTypes.NFT[] = []
 
             const response = await axios.get<{ total: number; page: number; page_size: number; cursor: null; result: NFT[] }>(
-                `${this.config.apiKey}/${address}/nft`,
+                `${this.config.endpoint}/${address}/nft`,
                 {
                     headers: this.contentType,
                     params: { chain: this.chainId, format: 'decimal', normalizeMetadata: 'false' },
@@ -113,7 +132,7 @@ export class MoralisProvider extends BaseProvider {
             const txns: TransactionTypes.Transaction[] = []
 
             const response = await axios.get<{ page: number; page_size: number; cursor: null; result: GetTransactionJSONResponse[] }>(
-                `https://deep-index.moralis.io/api/v2/${address}`,
+                `${this.config.endpoint}/${address}`,
                 {
                     headers: this.contentType,
                     params: { chain: this.chainId, limit: size },
@@ -140,7 +159,6 @@ export class MoralisProvider extends BaseProvider {
                     let txObj: Types.Undefined<TransactionTypes.TransactionObject>
                     // let logDesc: EvmTypes.LogDescription[] = []
                     const inputData: Types.Undefined<EvmTypes.InputData> = decodeInputDataFromABIs(input)
-
                     // if (logs && logs.length > 0) {
                     //     const ourInputData: { topics: Array<string>; data: string }[] = []
                     //     for (let l = 0; l < logs.length; l++) {
@@ -158,41 +176,42 @@ export class MoralisProvider extends BaseProvider {
                     //     }
                     //     logDesc = decodeTransactionLog(ERC20, ourInputData)
                     // }
+
                     if (input === '0x') {
                         type = address === to ? TransactionEnums.TransactionType.RECEIVE : TransactionEnums.TransactionType.SEND
                         txObj = {
-                            balance: Helper.Decimal.fromDecimal(value, EVMUtil.BaseDecimals),
+                            balance: value,
                             symbol: EVMUtil.CoinSymbol,
                             type: 'coin',
                         } as TransactionTypes.CoinObject
                     } else {
                         if (inputData) {
                             const { args, name } = inputData
-                            if (name === 'transfer') {
+                            if (name.toLowerCase().includes('transfer')) {
                                 to = args.to
                                 type = address === to ? TransactionEnums.TransactionType.RECEIVE : TransactionEnums.TransactionType.SEND
-                                let erc20: Types.Undefined<EvmTypes.ERC20> = this.getTokenInfo(String(to_address))
-                                if (!erc20) {
-                                    const erc20s = await this.getERC20MetaData(String(to_address))
-                                    if (erc20s.status === 'SUCCESS' && erc20s.data) {
-                                        erc20 = erc20s.data
-                                    }
-                                }
-                                if (erc20)
+                                const erc20: Types.Undefined<EvmTypes.ERC20> = this.getTokenInfo(String(to_address))
+                                // if (!erc20) {
+                                //     const erc20s = await this.getERC20MetaData(String(to_address))
+                                //     if (erc20s.status === 'SUCCESS' && erc20s.data) {
+                                //         erc20 = Object.assign({}, { ...erc20s.data })
+                                //     }
+                                // }
+                                if (erc20) {
                                     txObj = {
-                                        balance: args.value ? Helper.Decimal.fromDecimal(args.value, erc20.decimals) : '',
-                                        symbol: erc20.symbol,
+                                        balance: args.value || 'Unknown',
+                                        symbol: erc20.symbol || 'Unknown',
                                         type: 'token',
                                     } as TransactionTypes.CoinObject
-                            } else if (name === 'claim') {
+                                }
+                            } else if (name.toLowerCase().includes('claim')) {
                                 type = TransactionEnums.TransactionType.CLAIM
                                 to = args.receiver
-                                // txObj = {
-                                //     balance: mTxn.payload.arguments?.[2],
-                                //     symbol: AptosUtil.AptosCoinSymbol,
-                                //     type: 'coin',
-                                // } as TransactionTypes.CoinObject
-                            } else if (name === 'mint') {
+                                txObj = {
+                                    ...inputData,
+                                    overview: name || 'Unknown',
+                                } as TransactionTypes.ScriptObject
+                            } else if (name.toLowerCase().includes('mint')) {
                                 type = TransactionEnums.TransactionType.MINT
                                 to = args.to
                                 if (args.tokenId || args.uri) {
@@ -209,6 +228,12 @@ export class MoralisProvider extends BaseProvider {
                                     overview: name || 'Unknown',
                                 } as TransactionTypes.ScriptObject
                             }
+                        } else {
+                            type = TransactionEnums.TransactionType.SCRIPT
+                            txObj = {
+                                ...x,
+                                overview: 'Unknown',
+                            } as TransactionTypes.ScriptObject
                         }
                         // if (logDesc.length > 0) {
                         //     const log = logDesc.find((l) => l.name === 'Transfer')
@@ -232,18 +257,22 @@ export class MoralisProvider extends BaseProvider {
                         //     }
                         // }
                     }
-                    txns.push({
-                        hash,
-                        data: txObj,
-                        from,
-                        to,
-                        gasFee: Bignumber(gas_price).times(Bignumber(receipt_gas_used)).toNumber(),
-                        status:
-                            receipt_status === '1' ? TransactionEnums.TransactionStatus.SUCCESS : TransactionEnums.TransactionStatus.FAILED,
-                        timestamp: block_timestamp ? new Date(block_timestamp).getTime() : null,
-                        type,
-                        version: Number(block_number),
-                    } as TransactionTypes.Transaction)
+                    if (txObj) {
+                        txns.push({
+                            hash,
+                            data: txObj,
+                            from,
+                            to,
+                            gasFee: Bignumber(gas_price).times(Bignumber(receipt_gas_used)).toNumber(),
+                            status:
+                                receipt_status === '1'
+                                    ? TransactionEnums.TransactionStatus.SUCCESS
+                                    : TransactionEnums.TransactionStatus.FAILED,
+                            timestamp: block_timestamp ? new Date(block_timestamp).getTime() : null,
+                            type,
+                            version: Number(block_number),
+                        } as TransactionTypes.Transaction)
+                    }
                 })
             }
             return { status: 'SUCCESS', data: txns }
@@ -264,7 +293,7 @@ export class MoralisProvider extends BaseProvider {
                     logoHash?: string | null
                     thumbnail?: string | null
                 }[]
-            >('https://deep-index.moralis.io/api/v2/erc20/metadata', {
+            >(`${this.config.endpoint}/erc20/metadata`, {
                 headers: this.contentType,
                 params: { chain: this.chainId, addresses: [address] },
             })

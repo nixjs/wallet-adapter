@@ -1,4 +1,4 @@
-import { VaultTypes, ProviderEnums, EVMUtil, HexString, TransactionTypes } from '@nixjs23n6/utilities-adapter'
+import { VaultTypes, ProviderEnums, EvmUtil, HexString, TransactionTypes } from '@nixjs23n6/utilities-adapter'
 import { BaseProvider } from '../vault/base'
 import { Crypto } from '../vault/crypto'
 import * as ether from 'ethers'
@@ -34,8 +34,8 @@ export class EthereumVault extends BaseProvider {
     }
 
     async getAccountFromMnemonic(derivationPath: number, mnemonic: string): Promise<VaultTypes.AccountObject & { path: string }> {
-        const path = Crypto.derivationHdPath(EVMUtil.CoinType, derivationPath)
-        const ac = await EthereumVault.fromDerivePath(Crypto.derivationHdPath(EVMUtil.CoinType, derivationPath), mnemonic)
+        const path = Crypto.derivationHdPath(EvmUtil.CoinType, derivationPath)
+        const ac = await EthereumVault.fromDerivePath(Crypto.derivationHdPath(EvmUtil.CoinType, derivationPath), mnemonic)
         return { ...ac.toPrivateKeyObject(), path }
     }
 
@@ -47,7 +47,7 @@ export class EthereumVault extends BaseProvider {
     }
 
     public get coinType(): number {
-        return EVMUtil.CoinType
+        return EvmUtil.CoinType
     }
 
     public get type(): ProviderEnums.Provider {

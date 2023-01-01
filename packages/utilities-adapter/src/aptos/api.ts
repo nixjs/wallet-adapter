@@ -2,6 +2,7 @@ import axios, { Axios } from 'axios'
 import { Interfaces } from '@nixjs23n6/types'
 import { AptosClient, AptosAccount, Types as AptosTypes, TxnBuilderTypes, BCS } from 'aptos'
 import { AptosEnums } from './enums'
+import { PrimitiveHexString } from '../HexString'
 import { AptosCoinStore, BaseMaxGasAmount, BaseExpireTimestamp } from './const'
 
 function interceptors(axiosInstance: Axios) {
@@ -37,7 +38,11 @@ export namespace AptosApiRequest {
         })
     }
 
-    export function fundAccountApi(baseURL: string, address: string, amount: number): Promise<Interfaces.ResponseData<string[]>> {
+    export function fundAccountApi(
+        baseURL: string,
+        address: PrimitiveHexString,
+        amount: number
+    ): Promise<Interfaces.ResponseData<string[]>> {
         return new Promise((resolve) => {
             interceptors(axios)
             axios
@@ -59,7 +64,7 @@ export namespace AptosApiRequest {
 
     export function fetchAccountResourcesApi(
         baseURL: string,
-        address: string,
+        address: PrimitiveHexString,
         ledgerVersion?: string
     ): Promise<Interfaces.ResponseData<AptosTypes.MoveResource[]>> {
         return new Promise((resolve) => {
@@ -87,7 +92,7 @@ export namespace AptosApiRequest {
 
     export function getAccountTransactions(
         baseURL: string,
-        address: string,
+        address: PrimitiveHexString,
         limit?: number,
         start?: number
     ): Promise<Interfaces.ResponseData<AptosTypes.Transaction[]>> {
@@ -124,7 +129,7 @@ export namespace AptosApiRequest {
 
     export function fetchAccountResourceApi(
         baseURL: string,
-        address: string,
+        address: PrimitiveHexString,
         resourceType: string,
         ledgerVersion?: string
     ): Promise<Interfaces.ResponseData<AptosTypes.MoveResource>> {
@@ -151,7 +156,7 @@ export namespace AptosApiRequest {
 
     export function fetchAccountApi(
         baseURL: string,
-        address: string,
+        address: PrimitiveHexString,
         params?: { ledger_version: string }
     ): Promise<Interfaces.ResponseData<AptosTypes.AccountData>> {
         return new Promise((resolve) => {
@@ -177,7 +182,7 @@ export namespace AptosApiRequest {
 
     export function fetchAccountTransactionsApi(
         baseURL: string,
-        address: string,
+        address: PrimitiveHexString,
         limit?: number,
         start?: number
     ): Promise<Interfaces.ResponseData<AptosTypes.Transaction[]>> {
@@ -259,7 +264,7 @@ export namespace AptosApiRequest {
 
     export function fetchEventsByEventHandleApi(
         baseURL: string,
-        address: string,
+        address: PrimitiveHexString,
         eventHandle: string = AptosCoinStore,
         fieldName: AptosEnums.TxEvent,
         limit?: number,
@@ -298,7 +303,7 @@ export namespace AptosApiRequest {
         })
     }
     export async function transferCoinPayload(
-        address: string,
+        address: PrimitiveHexString,
         amount: number,
         exactTokenName: string
     ): Promise<TxnBuilderTypes.TransactionPayloadEntryFunction> {
@@ -321,7 +326,7 @@ export namespace AptosApiRequest {
     }
 
     export async function AptosAccountTransferPayload(
-        address: string,
+        address: PrimitiveHexString,
         amount: number
     ): Promise<TxnBuilderTypes.TransactionPayloadEntryFunction> {
         // TS SDK support 3 types of transaction payloads: `EntryFunction`, `Script` and `Module`.

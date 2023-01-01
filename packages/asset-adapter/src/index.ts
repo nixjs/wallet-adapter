@@ -1,6 +1,0 @@
-export * from './base'
-export * as Aptos from './aptos'
-export * as SUI from './sui'
-export * as EVM from './evm'
-export * from './asset'
-export * from './types'

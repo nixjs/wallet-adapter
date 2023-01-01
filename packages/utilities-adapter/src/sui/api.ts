@@ -13,10 +13,11 @@ import {
 import { RateLimit } from '@nixjs23n6/async-sema'
 import { Coin, Nft } from './object'
 import { TransactionTypes } from '../types'
+import { PrimitiveHexString } from '../HexString'
 import { TransactionEnums } from '../enums'
 
 export namespace SUIApiRequest {
-    export async function getTransactionsForAddress(nodeURL: string, address: string): Promise<TransactionTypes.Transaction[]> {
+    export async function getTransactionsForAddress(nodeURL: string, address: PrimitiveHexString): Promise<TransactionTypes.Transaction[]> {
         const query = new JsonRpcProvider(nodeURL, {
             skipDataValidation: false,
         })

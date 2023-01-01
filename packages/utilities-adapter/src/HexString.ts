@@ -1,7 +1,8 @@
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 
-// eslint-disable-next-line no-use-before-define
-export type MaybeHexString = HexString | string
+export type PrimitiveHexString = string
+
+export type MaybeHexString = HexString | PrimitiveHexString
 
 /**
  * A util class for working with hex strings.

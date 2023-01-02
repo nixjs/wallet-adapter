@@ -381,12 +381,21 @@ export class AptosTransaction extends BaseProvider {
                 transferPayload = await AptosUtil.AptosApiRequest.AptosAccountTransferPayload(to, ourAmount)
             }
 
+            let ourGasPrice: string | number = AptosUtil.BaseGasPrice
+            if (gasPrice) {
+                ourGasPrice = gasPrice
+            } else {
+                const estimateGas = await this.estimateGasUnitPrice(chainId)
+                if (estimateGas) {
+                    ourGasPrice = estimateGas
+                }
+            }
             if (transferPayload) {
                 const rawTxn: TxnBuilderTypes.RawTransaction = await AptosUtil.AptosApiRequest.createRawTransaction(
                     client,
                     owner,
                     transferPayload,
-                    BigInt(gasPrice || AptosUtil.BaseGasPrice),
+                    BigInt(ourGasPrice),
                     BigInt(gasLimit || AptosUtil.BaseMaxGasAmount),
                     AptosUtil.BaseExpireTimestamp
                 )
@@ -626,8 +635,18 @@ export class AptosTransaction extends BaseProvider {
                 [to, NFT.creator, collection, name, 0, amount]
             )
 
+            let ourGasPrice: string | number = AptosUtil.BaseGasPrice
+            if (gasPrice) {
+                ourGasPrice = gasPrice
+            } else {
+                const estimateGas = await this.estimateGasUnitPrice(chainId)
+                if (estimateGas) {
+                    ourGasPrice = estimateGas
+                }
+            }
+
             const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(from.address), payload, {
-                gasUnitPrice: BigInt(gasPrice || AptosUtil.BaseGasPrice),
+                gasUnitPrice: BigInt(ourGasPrice),
                 maxGasAmount: BigInt(gasLimit || AptosUtil.BaseMaxGasAmount),
                 expireTimestamp: BigInt(Math.floor(Date.now() / 1e3) + AptosUtil.BaseExpireTimestamp),
             })

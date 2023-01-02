@@ -1,9 +1,11 @@
 import { Types, Interfaces } from '@nixjs23n6/types'
-import { VaultTypes, IError, EvmUtil, TransactionTypes, AssetTypes, Helper } from '@nixjs23n6/utilities-adapter'
-import { Contract, providers, utils, Wallet, BigNumber } from 'ethers'
-import { EvmTypes } from '../types'
+import { VaultTypes, IError, EvmUtil, TransactionTypes, AssetTypes, Helper, PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
+import { Contract, providers, utils, Wallet, BigNumber, PopulatedTransaction } from 'ethers'
+import BigNumberJs from 'bignumber.js'
 import { DefaultAsset } from '../const'
-import { BaseGasLimit, BaseGasPriceMap } from './gas'
+import { EmvGasUtil, GasPriceTypes } from '../gas'
+import { EvmNativeConfig } from '../evmNativeConfig'
+import { EvmAsset } from '../asset'
 
 export class EvmTransaction {
     #chainId: string
@@ -15,10 +17,6 @@ export class EvmTransaction {
         this.#config = config
         console.log('this.#config[this.#chainId]', this.#config[this.#chainId])
         this.#provider = new providers.JsonRpcProvider(this.#config[this.#chainId])
-    }
-
-    #getTokenInfo(assetId: string) {
-        return EvmUtil.Erc20Tokens.find((t) => t.address.toLowerCase() === assetId.toLowerCase())
     }
 
     #getWallet(owner: VaultTypes.AccountObject): Wallet {
@@ -37,10 +35,35 @@ export class EvmTransaction {
         return this.#chainId
     }
 
-    public get assets(): EvmTypes.ERC20[] {
-        const assets = EvmUtil.Erc20Tokens.filter((t) => t.chainId === Number(this.#chainId))
+    public get assets(): AssetTypes.Asset[] {
+        const assets = EvmUtil.Erc20Tokens.filter((t) => t.chainId === Number(this.#chainId)).map(
+            ({ address, chainId, decimals, logoURI, name, symbol }) =>
+                ({
+                    assetId: address,
+                    decimals,
+                    isNative: EvmNativeConfig[chainId].native.assetId.toLowerCase() === name.toLowerCase(),
+                    logoUrl: logoURI,
+                    name,
+                    symbol,
+                } as AssetTypes.Asset)
+        )
         if (!assets) return []
         return assets
+    }
+
+    async estimateGasUnitPrice(chainId: PrimitiveHexString): Promise<Types.Nullable<string>> {
+        try {
+            if (!chainId) throw new Error('The chain id not found.')
+            // const res = await this.#provide.
+            // if (res.status === 'SUCCESS' && res.data?.gas_estimate) {
+            //     return String(res.data.gas_estimate)
+            // } else {
+            throw new Error('The gas price not found')
+            // }
+        } catch (error) {
+            console.log('[estimateGasUnitPrice]', error)
+            return null
+        }
     }
 
     async getBalance(address: string): Promise<number> {
@@ -57,7 +80,7 @@ export class EvmTransaction {
         from: VaultTypes.AccountObject,
         to: string,
         amount: string,
-        speed: 'Slow' | 'Average' | 'Fast' = 'Average'
+        speed: GasPriceTypes = GasPriceTypes.AVERAGE
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
         try {
             if (!from.address || !from.publicKeyHex)
@@ -78,18 +101,37 @@ export class EvmTransaction {
             const nonce = await ourWallet.getTransactionCount()
             const transaction: providers.TransactionRequest = {
                 nonce,
-                gasLimit: BigNumber.from(BaseGasLimit),
-                gasPrice: BigNumber.from(BaseGasPriceMap[speed]), // wei
+                gasLimit: BigNumber.from(EmvGasUtil.BaseGasNativeLimit),
+                // gasPrice: EmvGasUtil.getGasBasedOnType(gasPrice.toString(), speed), // wei
                 to,
                 value: utils.parseEther(amount),
                 data: '0x',
             }
 
-            const rawTxn = await ourWallet.populateTransaction(transaction)
-            let fee = '0'
-            if (transaction.gasPrice && rawTxn.gasLimit) {
-                fee = utils.formatUnits(BigNumber.from(transaction.gasPrice).mul(rawTxn.gasLimit))
+            const gasPrice = await this.#provider.getGasPrice()
+            const { lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas } = await this.#provider.getFeeData()
+            let estimateFee = '0'
+
+            if (maxFeePerGas && maxPriorityFeePerGas) {
+                let _maxFeePerGas = EmvGasUtil.getBaseFeeBasedOnType(maxFeePerGas?.toString() as string, speed)
+                const _maxPriorityFeePerGas = EmvGasUtil.getPriorityFeeBasedOnType(
+                    lastBaseFeePerGas?.toString() as string,
+                    gasPrice?.toString(),
+                    speed
+                ).toString()
+                if (_maxPriorityFeePerGas && BigNumberJs(_maxFeePerGas).gt(_maxFeePerGas)) {
+                    _maxFeePerGas = _maxPriorityFeePerGas
+                }
+
+                transaction.maxFeePerGas = _maxFeePerGas
+                transaction.maxPriorityFeePerGas = _maxPriorityFeePerGas
+                estimateFee = EmvGasUtil.calculateFee(_maxPriorityFeePerGas, EmvGasUtil.BaseGasNativeLimit.toString(), false)
+            } else {
+                transaction.gasPrice = EmvGasUtil.getGasBasedOnType(gasPrice.toString(), speed) // wei
+                estimateFee = EmvGasUtil.calculateFee(transaction.gasPrice.toString(), EmvGasUtil.BaseGasNativeLimit.toString(), false)
             }
+
+            const rawTxn = await ourWallet.populateTransaction(transaction)
             const limit = rawTxn.gasLimit ? utils.formatUnits(rawTxn.gasLimit, 'gwei') : '' // gwei -> tether
             const price = rawTxn.gasPrice ? utils.formatEther(rawTxn.gasPrice) : '' // wei -> tether
             return {
@@ -101,7 +143,7 @@ export class EvmTransaction {
                     chainId: this.#chainId,
                     gasLimit: limit ? Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals) : '',
                     gasPrice: price ? Helper.Decimal.toDecimal(price, EvmUtil.BaseDecimals) : '',
-                    transactionFee: fee ? Helper.Decimal.toDecimal(fee, EvmUtil.BaseDecimals) : '',
+                    transactionFee: estimateFee ? Helper.Decimal.toDecimal(estimateFee, EvmUtil.BaseDecimals) : '',
                     rawData: rawTxn,
                     transactionType: 'transfer',
                 },
@@ -118,7 +160,7 @@ export class EvmTransaction {
         from: VaultTypes.AccountObject,
         to: string,
         amount: string,
-        speed: 'Slow' | 'Average' | 'Fast' = 'Average'
+        speed: GasPriceTypes = GasPriceTypes.AVERAGE
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
         try {
             if (!from.address || !from.publicKeyHex)
@@ -126,7 +168,7 @@ export class EvmTransaction {
                     owner: 'Invalid information',
                 })
 
-            const tokenInfo = this.#getTokenInfo(asset.assetId)
+            const tokenInfo = EvmAsset.getTokenInfo(asset.assetId, this.#chainId)
             if (!tokenInfo) {
                 throw new Error(`Can NOT find ERC20 info of the ${asset.assetId} contract address`)
             }
@@ -160,15 +202,32 @@ export class EvmTransaction {
 
             const numberOfTokens = utils.parseUnits(amount, tokenInfo.decimals)
 
-            const rawTxn = await contract.populateTransaction.transfer(to, numberOfTokens, {
-                gasLimit: BigNumber.from(BaseGasLimit),
-                gasPrice: BigNumber.from(BaseGasPriceMap[speed]),
-            })
+            const populatedTransaction: PopulatedTransaction = { gasLimit: BigNumber.from(EmvGasUtil.BaseGasERC20Limit) }
 
-            let fee = '0'
-            if (BigNumber.from(BaseGasPriceMap[speed]) && rawTxn.gasLimit) {
-                fee = utils.formatUnits(BigNumber.from(BigNumber.from(BaseGasPriceMap[speed])).mul(rawTxn.gasLimit))
+            const gasPrice = await this.#provider.getGasPrice()
+            const { lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas } = await this.#provider.getFeeData()
+            let estimateFee = '0'
+
+            if (maxFeePerGas && maxPriorityFeePerGas) {
+                let _maxFeePerGas = EmvGasUtil.getBaseFeeBasedOnType(maxFeePerGas?.toString() as string, speed)
+                const _maxPriorityFeePerGas = EmvGasUtil.getPriorityFeeBasedOnType(
+                    lastBaseFeePerGas?.toString() as string,
+                    gasPrice?.toString(),
+                    speed
+                ).toString()
+                if (_maxPriorityFeePerGas && BigNumberJs(_maxFeePerGas).gt(_maxFeePerGas)) {
+                    _maxFeePerGas = _maxPriorityFeePerGas
+                }
+                populatedTransaction.maxFeePerGas = BigNumber.from(_maxFeePerGas)
+                populatedTransaction.maxPriorityFeePerGas = BigNumber.from(_maxPriorityFeePerGas)
+                estimateFee = EmvGasUtil.calculateFee(_maxPriorityFeePerGas, EmvGasUtil.BaseGasERC20Limit.toString(), false)
+            } else {
+                populatedTransaction.gasPrice = BigNumber.from(EmvGasUtil.getGasBasedOnType(gasPrice.toString(), speed)) // wei
+                estimateFee = EmvGasUtil.calculateFee(gasPrice.toString(), EmvGasUtil.BaseGasERC20Limit.toString(), false)
             }
+
+            const rawTxn = await contract.populateTransaction.transfer(to, numberOfTokens, populatedTransaction)
+
             const limit = rawTxn.gasLimit ? utils.formatUnits(rawTxn.gasLimit, 'gwei') : '' // gwei -> tether
             const price = rawTxn.gasPrice ? utils.formatEther(rawTxn.gasPrice) : '' // wei -> tether
 
@@ -181,7 +240,7 @@ export class EvmTransaction {
                     chainId: this.#chainId,
                     gasLimit: limit ? Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals) : '',
                     gasPrice: price ? Helper.Decimal.toDecimal(price, EvmUtil.BaseDecimals) : '',
-                    transactionFee: fee ? Helper.Decimal.toDecimal(fee, EvmUtil.BaseDecimals) : '',
+                    transactionFee: estimateFee ? Helper.Decimal.toDecimal(estimateFee, EvmUtil.BaseDecimals) : '',
                     rawData: rawTxn,
                     transactionType: 'transfer',
                 },
@@ -224,5 +283,9 @@ export class EvmTransaction {
             console.log('[executeTransaction]', error)
             return { error, status: 'ERROR' }
         }
+    }
+
+    getFeeDescription() {
+        return EmvGasUtil.FeeDescriptions
     }
 }

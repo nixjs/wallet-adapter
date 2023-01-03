@@ -33,13 +33,13 @@ export namespace TransactionTypes {
         data: TransactionObject
         version?: number
     }
-    export type TransactionObject = CoinObject | NFTObject | ScriptObject | RegisterAssetObject
+    export type TransactionObject = CoinObject | NftObject | ScriptObject | RegisterAssetObject
     export type CoinObject = {
         type: 'coin' | 'token'
         symbol: string
         balance: string
     }
-    export type NFTObject = {
+    export type NftObject = {
         type: 'nft' | 'collection'
         name: string
         description: string
@@ -79,7 +79,7 @@ export namespace TransactionTypes {
     }
     export interface RawTransferNFTTransaction {
         amount: string
-        asset: AssetTypes.NFT
+        asset: AssetTypes.Nft
     }
     export interface RegisterAssetTransaction {
         asset: AssetTypes.Asset

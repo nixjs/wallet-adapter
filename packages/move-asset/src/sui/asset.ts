@@ -75,14 +75,14 @@ export class SUIAsset extends BaseProvider {
         }
     }
 
-    async getNFTs(chainId: string, address: PrimitiveHexString): Promise<AssetTypes.NFT[]> {
+    async getNfts(chainId: string, address: PrimitiveHexString): Promise<AssetTypes.Nft[]> {
         try {
             const nodeURL = SUIUtil.BaseNodeByChainInfo[chainId]
-            let NFTs: AssetTypes.NFT[] = []
+            let nfts: AssetTypes.Nft[] = []
             if (nodeURL && address) {
-                NFTs = await SUIApiRequest.getOwnedNfts(nodeURL, address)
+                nfts = await SUIApiRequest.getOwnedNfts(nodeURL, address)
             }
-            return NFTs
+            return nfts
         } catch (error) {
             return []
         }

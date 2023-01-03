@@ -224,7 +224,7 @@ export class SUITransaction extends BaseProvider {
     }
     async transferNFT(
         chainId: string,
-        NFT: AssetTypes.NFT,
+        Nft: AssetTypes.Nft,
         amount: string,
         from: VaultTypes.AccountObject,
         to: string,
@@ -235,13 +235,13 @@ export class SUITransaction extends BaseProvider {
             const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
             if (!from || !from.publicKeyHex) throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format()
 
-            const result = await provider.transferObject(NFT.id, to, from, Number(gasLimit))
+            const result = await provider.transferObject(Nft.id, to, from, Number(gasLimit))
             if (result.status === 'SUCCESS' && result.data) {
                 const { gasLimit, rawData, transactionFee } = result.data
                 return {
                     data: {
                         amount,
-                        asset: NFT,
+                        asset: Nft,
                         from,
                         to,
                         chainId,

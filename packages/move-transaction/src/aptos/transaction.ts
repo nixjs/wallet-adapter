@@ -193,14 +193,14 @@ export class AptosTransaction extends BaseProvider {
                         name: mTxn.payload.arguments?.[1],
                         description: mTxn.payload.arguments?.[2],
                         url: mTxn.payload.arguments?.[5],
-                    } as TransactionTypes.NFTObject
+                    } as TransactionTypes.NftObject
                 } else if (String(mTxn.payload.function).includes(AptosUtil.AptosEnums.PayloadFunctionType.MINT_COLLECTION)) {
                     txObj = {
                         type: 'collection',
                         name: mTxn.payload.arguments?.[0],
                         description: mTxn.payload.arguments?.[1],
                         url: mTxn.payload.arguments?.[2],
-                    } as TransactionTypes.NFTObject
+                    } as TransactionTypes.NftObject
                 }
             } else if (String(mTxn.payload.function).includes(AptosUtil.AptosEnums.PayloadFunctionType.CLAIM)) {
                 txType = mTxn.sender === address ? TransactionEnums.TransactionType.CLAIM : TransactionEnums.TransactionType.SCRIPT
@@ -606,7 +606,7 @@ export class AptosTransaction extends BaseProvider {
     }
     async transferNFT(
         chainId: string,
-        NFT: AssetTypes.NFT,
+        Nft: AssetTypes.Nft,
         amount: string,
         from: VaultTypes.AccountObject,
         to: string,
@@ -619,7 +619,7 @@ export class AptosTransaction extends BaseProvider {
                     from: 'Invalid information',
                 })
 
-            if (NFT.creator.length === 0)
+            if (Nft.creator.length === 0)
                 throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
                     NFTCreator: 'Invalid information',
                 })
@@ -628,11 +628,11 @@ export class AptosTransaction extends BaseProvider {
 
             const transactionBuilder = new TransactionBuilderABI(AptosUtil.TOKEN_ABIS.map((abi) => new HexString(abi).toUint8Array()))
 
-            const { name, collection } = NFT
+            const { name, collection } = Nft
             const payload = transactionBuilder.buildTransactionPayload(
                 '0x3::token_transfers::offer_script',
                 [],
-                [to, NFT.creator, collection, name, 0, amount]
+                [to, Nft.creator, collection, name, 0, amount]
             )
 
             let ourGasPrice: string | number = AptosUtil.BaseGasPrice
@@ -658,7 +658,7 @@ export class AptosTransaction extends BaseProvider {
                 return {
                     data: {
                         amount,
-                        asset: NFT,
+                        asset: Nft,
                         from,
                         to,
                         chainId,

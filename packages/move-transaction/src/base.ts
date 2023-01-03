@@ -43,7 +43,7 @@ export abstract class BaseProvider {
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction>>
     abstract transferNFT(
         chainId: string,
-        NFT: AssetTypes.NFT,
+        Nft: AssetTypes.Nft,
         amount: string,
         from: VaultTypes.AccountObject,
         to: string,

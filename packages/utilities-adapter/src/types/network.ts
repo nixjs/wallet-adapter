@@ -11,7 +11,7 @@ export namespace NetworkTypes {
         nativeToken: string
         type: ProviderEnums.Network
         active?: boolean
-        isFaucetNFT?: boolean
+        isFaucetNft?: boolean
     }
     export type NetworkData = {
         data: Types.Object<Network>

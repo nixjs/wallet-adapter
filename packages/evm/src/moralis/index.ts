@@ -1,11 +1,11 @@
 import { Interfaces, Types } from '@nixjs23n6/types'
-import { AssetTypes, TransactionTypes, TransactionEnums, EvmUtil } from '@nixjs23n6/utilities-adapter'
+import { AssetTypes, TransactionTypes, TransactionEnums, EvmUtil, NftEnums } from '@nixjs23n6/utilities-adapter'
 import Bignumber from 'bignumber.js'
 import { GetTransactionJSONResponse } from 'moralis/common-evm-utils'
 import axios from 'axios'
 import { BaseProvider } from '../base'
 import { decodeInputDataFromABIs } from '../utils'
-import { Erc20TokenBalance, NFT } from './types'
+import { Erc20TokenBalance, Nft } from './types'
 import { EvmTypes } from '../types'
 
 export class MoralisProvider extends BaseProvider {
@@ -93,11 +93,11 @@ export class MoralisProvider extends BaseProvider {
         }
     }
 
-    async getNFTs(address: string): Promise<Interfaces.ResponseData<AssetTypes.NFT[]>> {
+    async getNfts(address: string): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>> {
         try {
-            const nfts: AssetTypes.NFT[] = []
+            const nfts: AssetTypes.Nft[] = []
 
-            const response = await axios.get<{ total: number; page: number; page_size: number; cursor: null; result: NFT[] }>(
+            const response = await axios.get<{ total: number; page: number; page_size: number; cursor: null; result: Nft[] }>(
                 `${this.config.endpoint}/${this.config.prefix}/${address}/nft`,
                 {
                     headers: this.contentType,
@@ -108,8 +108,11 @@ export class MoralisProvider extends BaseProvider {
             if (response.data && response.data.result.length > 0) {
                 const { result } = response.data
                 result.forEach((x) => {
-                    const { name, token_address, owner_of, token_uri, metadata, token_id } = x
+                    const { name, token_address, owner_of, token_uri, metadata, token_id, contract_type } = x
                     const ourMetadata = metadata ? JSON.parse(metadata) : null
+                    let type = NftEnums.NftTokenType.UNKNOWN
+                    if (contract_type === 'ERC721') type = NftEnums.NftTokenType.ERC721
+                    if (contract_type === 'ERC1155') type = NftEnums.NftTokenType.ERC1155
                     nfts.push({
                         collection: '',
                         creator: owner_of,
@@ -118,7 +121,8 @@ export class MoralisProvider extends BaseProvider {
                         name: ourMetadata && ourMetadata.name ? ourMetadata.name : name || '',
                         uri: token_uri,
                         metadata: x,
-                    } as AssetTypes.NFT)
+                        type,
+                    } as AssetTypes.Nft)
                 })
             }
             return { status: 'SUCCESS', data: nfts }
@@ -220,7 +224,7 @@ export class MoralisProvider extends BaseProvider {
                                         name: args.tokenId,
                                         url: args.uri,
                                         type: 'nft',
-                                    } as TransactionTypes.NFTObject
+                                    } as TransactionTypes.NftObject
                                 }
                             } else {
                                 type = TransactionEnums.TransactionType.SCRIPT

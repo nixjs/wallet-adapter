@@ -1,3 +1,5 @@
+import { NftEnums } from '../enums'
+
 export namespace AssetTypes {
     export interface NativeCoin {
         assetId: string
@@ -22,16 +24,17 @@ export namespace AssetTypes {
         assetId: string
     }
 
-    export interface NFT {
+    export interface Nft {
         id: string
         collection: string
         creator: string
         name: string
         description: string
         uri: string
-        metadata?: NFTMetadata
+        type: NftEnums.NftTokenType
+        metadata?: NftMetadata
     }
-    export interface NFTMetadata {
+    export interface NftMetadata {
         [key: string]: any
     }
 }

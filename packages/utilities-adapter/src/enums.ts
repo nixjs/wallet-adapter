@@ -25,3 +25,11 @@ export namespace TransactionEnums {
         SUCCESS,
     }
 }
+
+export namespace NftEnums {
+    export enum NftTokenType {
+        ERC721 = 'ERC721',
+        ERC1155 = 'ERC1155',
+        UNKNOWN = 'UNKNOWN',
+    }
+}

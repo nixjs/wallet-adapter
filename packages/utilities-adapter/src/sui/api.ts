@@ -102,7 +102,7 @@ export namespace SUIApiRequest {
                                     name: nftObject.name || coin.objectId,
                                     description: nftObject.description,
                                     url: nftObject.url,
-                                } as TransactionTypes.NFTObject
+                                } as TransactionTypes.NftObject
                             }
                             if (txObj) {
                                 results.push({
@@ -148,7 +148,7 @@ export namespace SUIApiRequest {
                                 name: nftObject.name || transferObject.objectRef.objectId,
                                 description: nftObject.description,
                                 url: nftObject.url,
-                            } as TransactionTypes.NFTObject
+                            } as TransactionTypes.NftObject
                         }
 
                         // TODO: handle more object types
@@ -182,7 +182,7 @@ export namespace SUIApiRequest {
                             name: moveCall.arguments[0],
                             description: moveCall.arguments[1],
                             url: moveCall.arguments[2],
-                        } as TransactionTypes.NFTObject
+                        } as TransactionTypes.NftObject
                     } else
                         txObj = {
                             type: 'move_call',

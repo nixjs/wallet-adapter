@@ -1,4 +1,4 @@
-import { SUIUtil, AssetTypes, PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
+import { SUIUtil, AssetTypes, PrimitiveHexString, NftEnums } from '@nixjs23n6/utilities-adapter'
 import { JsonRpcProvider, getObjectExistsResponse, getMoveObject, SuiObject, SuiMoveObject } from '@mysten/sui.js'
 
 export namespace SUIApiRequest {
@@ -41,7 +41,7 @@ export namespace SUIApiRequest {
         }))
     }
 
-    export async function getOwnedNfts(nodeURL: string, address: PrimitiveHexString): Promise<AssetTypes.NFT[]> {
+    export async function getOwnedNfts(nodeURL: string, address: PrimitiveHexString): Promise<AssetTypes.Nft[]> {
         const query = new JsonRpcProvider(nodeURL, {
             skipDataValidation: false,
         })
@@ -68,7 +68,8 @@ export namespace SUIApiRequest {
                     collection: '',
                     creator: '',
                     metadata: nft,
-                } as AssetTypes.NFT)
+                    type: NftEnums.NftTokenType.UNKNOWN,
+                } as AssetTypes.Nft)
         )
     }
 }

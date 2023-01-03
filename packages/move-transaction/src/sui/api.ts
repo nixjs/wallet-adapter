@@ -202,7 +202,7 @@ export class QueryProvider {
                             name: nftObject.name,
                             description: nftObject.description,
                             url: nftObject.url,
-                        } as TransactionTypes.NFTObject
+                        } as TransactionTypes.NftObject
                     }
                     if (txObj) {
                         results.push({
@@ -243,7 +243,7 @@ export class QueryProvider {
                             name: nftObject.name,
                             description: nftObject.description,
                             url: nftObject.url,
-                        } as TransactionTypes.NFTObject
+                        } as TransactionTypes.NftObject
                     }
                     // TODO: handle more object types
                     if (txObj) {
@@ -273,7 +273,7 @@ export class QueryProvider {
                             name: moveCall.arguments[0],
                             description: moveCall.arguments[1],
                             url: moveCall.arguments[2],
-                        } as TransactionTypes.NFTObject
+                        } as TransactionTypes.NftObject
                     } else
                         txObj = {
                             type: 'move_call',
@@ -334,7 +334,7 @@ export class QueryProvider {
                         return {
                             type: 'nft',
                             ...SUIUtil.Nft.getNftObject(obj),
-                        } as TransactionTypes.NFTObject
+                        } as TransactionTypes.NftObject
                     }
                 }
             }
@@ -365,8 +365,8 @@ export const MINT_EXAMPLE_NFT_MOVE_CALL = {
     function: 'mint',
     typeArguments: [],
     arguments: [
-        'Suiet NFT',
-        'An NFT created by Suiet',
+        'Suiet Nft',
+        'An Nft created by Suiet',
         'https://xc6fbqjny4wfkgukliockypoutzhcqwjmlw2gigombpp2ynufaxa.arweave.net/uLxQwS3HLFUailocJWHupPJxQsli7aMgzmBe_WG0KC4',
     ],
     gasBudget: 10000,

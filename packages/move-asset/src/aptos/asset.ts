@@ -1,5 +1,5 @@
 import { Interfaces, Types } from '@nixjs23n6/types'
-import { ProviderEnums, AptosUtil, Helper, AssetTypes, PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
+import { ProviderEnums, AptosUtil, Helper, AssetTypes, PrimitiveHexString, NftEnums } from '@nixjs23n6/utilities-adapter'
 import { RateLimit } from '@nixjs23n6/async-sema'
 import { AptosClient, TokenClient, Types as AptosTypes, TokenTypes } from 'aptos'
 import { AptosApiRequest } from './api'
@@ -148,10 +148,10 @@ export class AptosAsset extends BaseProvider {
         }
     }
 
-    async getNFTs(chainId: string, address: PrimitiveHexString): Promise<AssetTypes.NFT[]> {
+    async getNfts(chainId: string, address: PrimitiveHexString): Promise<AssetTypes.Nft[]> {
         try {
             const nodeURL = AptosUtil.BaseNodeByChainInfo[chainId]
-            const NFTs: AssetTypes.NFT[] = []
+            const nfts: AssetTypes.Nft[] = []
             if (nodeURL && address) {
                 const resources = await AptosUtil.AptosApiRequest.fetchAccountResourcesApi(nodeURL, address)
                 if (resources.status === 'SUCCESS' && resources.data && resources.data.length > 0) {
@@ -195,23 +195,25 @@ export class AptosAsset extends BaseProvider {
                                 )
                                 if (tokenData) {
                                     const { description, name, uri } = tokenData
-                                    NFTs.push({
+                                    nfts.push({
                                         id: Helper.stringToSlug(data.name),
                                         collection: data.collection,
                                         name,
                                         description,
                                         uri,
                                         creator: data.creator,
-                                    } as AssetTypes.NFT)
+                                        type: NftEnums.NftTokenType.UNKNOWN,
+                                        metadata: element,
+                                    } as AssetTypes.Nft)
                                 }
                             }
                         }
                     }
                 }
             }
-            return NFTs
+            return nfts
         } catch (error) {
-            console.log('[getNFTs]', error)
+            console.log('[getNfts]', error)
             return []
         }
     }

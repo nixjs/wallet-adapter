@@ -10,7 +10,7 @@ export interface Erc20TokenBalance {
     balance: string
 }
 
-export interface NFT {
+export interface Nft {
     token_address: string
     token_id: string
     amount: Types.Nullable<string>

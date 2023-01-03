@@ -144,12 +144,12 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getNFTs(address: string): Promise<Interfaces.ResponseData<AssetTypes.NFT[]>> {
+    async getNfts(address: string): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>> {
         try {
-            const nfts: AssetTypes.NFT[] = []
+            const nfts: AssetTypes.Nft[] = []
 
             const response = await axios.get<OwnedNftsResponse>(
-                `${this.config.endpoint}/v2/${this.config.apiKey}/getNFTs?owner=${address}`,
+                `${this.config.endpoint}/v2/${this.config.apiKey}/getNfts?owner=${address}`,
                 {
                     headers: this.contentType,
                 }
@@ -167,7 +167,8 @@ export class AlchemyProvider extends BaseProvider {
                         name: title,
                         uri: tokenUri?.raw || tokenUri?.gateway || '',
                         metadata: x,
-                    } as AssetTypes.NFT)
+                        type: contract.tokenType,
+                    } as AssetTypes.Nft)
                 })
             }
             return { status: 'SUCCESS', data: nfts }
@@ -339,13 +340,13 @@ export class AlchemyProvider extends BaseProvider {
                         //         url: tokenUri?.raw || tokenUri?.gateway || '',
                         //         description,
                         //         type: 'nft',
-                        //     } as TransactionTypes.NFTObject
+                        //     } as TransactionTypes.NftObject
                         // }
                         txObj = {
                             name: 'tokenId',
                             url: '',
                             type: 'nft',
-                        } as TransactionTypes.NFTObject
+                        } as TransactionTypes.NftObject
                     }
                 } else {
                     txObj = {

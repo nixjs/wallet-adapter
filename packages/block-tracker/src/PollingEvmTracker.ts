@@ -1,4 +1,4 @@
-import { AlchemyProvider, MoralisProvider, Config } from '@nixjs23n6/evm'
+import { AlchemyProvider, MoralisProvider, ConfigData, Config, EvmEnums } from '@nixjs23n6/evm'
 import { BaseBlockTracker, PollingBlockTrackerOptions, Block } from './BaseBlockTracker'
 
 const sec = 1000
@@ -12,12 +12,12 @@ export class PollingEvmTracker extends BaseBlockTracker {
     #retryTimeout: number
 
     #keepEventLoopActive: boolean
-    #evmConfig: Config
+    #evmConfig: Record<string, Record<string, ConfigData>>
     #chainId: string
 
     // #setSkipCacheFlag: boolean
 
-    constructor(opts: PollingBlockTrackerOptions, config: Config, chainId: string) {
+    constructor(opts: PollingBlockTrackerOptions, config: Record<string, Record<string, ConfigData>>, chainId: string) {
         // parse + validate args
         if (!opts.address || !opts.nodeURL) {
             throw new Error('PollingBlockTracker - no address/nodeURL specified.')
@@ -82,7 +82,7 @@ export class PollingEvmTracker extends BaseBlockTracker {
     }
 
     private async _fetchLatestBlock(): Promise<Block> {
-        const moralis = new MoralisProvider(this.#evmConfig, this.#chainId)
+        const moralis = new MoralisProvider(this.#evmConfig[EvmEnums.Provider.MORALIS], this.#chainId)
         const moralistRes = await moralis.getTransactions(this.#address, 1)
         if (moralistRes.status === 'SUCCESS' && moralistRes.data && moralistRes.data?.length > 0) {
             const data = moralistRes.data[0]
@@ -91,7 +91,7 @@ export class PollingEvmTracker extends BaseBlockTracker {
                 version: String(data.version),
             }
         } else {
-            const alchemy = new AlchemyProvider(this.#evmConfig, this.#chainId)
+            const alchemy = new AlchemyProvider(this.#evmConfig[EvmEnums.Provider.ALCHEMY], this.#chainId)
             const alchemyRes = await alchemy.getTransactions(this.#address, 1)
             if (alchemyRes.status === 'SUCCESS' && alchemyRes.data && alchemyRes.data?.length > 0) {
                 const data = alchemyRes.data[0]

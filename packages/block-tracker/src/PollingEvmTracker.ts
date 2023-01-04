@@ -1,4 +1,4 @@
-import { AlchemyProvider, MoralisProvider, ConfigData, Config, EvmEnums } from '@nixjs23n6/evm'
+import { AlchemyProvider, MoralisProvider, ConfigData, EvmEnums } from '@nixjs23n6/evm'
 import { BaseBlockTracker, PollingBlockTrackerOptions, Block } from './BaseBlockTracker'
 
 const sec = 1000

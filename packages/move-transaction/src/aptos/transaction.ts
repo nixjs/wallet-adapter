@@ -445,7 +445,9 @@ export class AptosTransaction extends BaseProvider {
     async registerAsset(
         chainId: string,
         asset: AssetTypes.Asset,
-        owner: VaultTypes.AccountObject
+        owner: VaultTypes.AccountObject,
+        gasLimit?: string,
+        gasPrice?: string
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>> {
         try {
             if (!owner.address || !owner.publicKeyHex)
@@ -465,7 +467,21 @@ export class AptosTransaction extends BaseProvider {
                 type_arguments: [`${AptosAsset.AptosApiRequest.getCoinAddressType(asset.assetId)}`],
             }
 
-            const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateTransaction(owner.address, params)
+            let ourGasPrice: string | number = AptosUtil.BaseGasPrice
+            if (gasPrice) {
+                ourGasPrice = gasPrice
+            } else {
+                const estimateGas = await this.estimateGasUnitPrice(chainId)
+                if (estimateGas) {
+                    ourGasPrice = estimateGas
+                }
+            }
+            const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateTransaction(owner.address, params, {
+                expiration_timestamp_secs: String(Math.floor(Date.now() / 1e3) + AptosUtil.BaseExpireTimestamp),
+                gas_unit_price: String(ourGasPrice),
+                max_gas_amount: String(gasLimit || AptosUtil.BaseMaxGasAmount),
+            })
+
             const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
             return {
                 data: {
@@ -491,7 +507,7 @@ export class AptosTransaction extends BaseProvider {
 
     async simulateTransaction(
         chainId: string,
-        rawTxn: any,
+        rawTxn: TxnBuilderTypes.RawTransaction,
         owner: VaultTypes.AccountObject,
         type: 'transfer' | 'script',
         gasLimit?: string,

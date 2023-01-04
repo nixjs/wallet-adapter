@@ -11,7 +11,7 @@ export const CoinType = 637
 export const BaseFundingAirdrop = 1000000000
 export const BaseGasPrice = 100
 export const BaseMaxGasAmount = 2000
-export const BaseExpireTimestamp = 100 // second
+export const BaseExpireTimestamp = 300 // second
 export const BaseDecimals = 8
 export const BaseIconURL = 'https://raw.githubusercontent.com/nixjs/aptos-wallet-icon/main/icons/aptos-logo.svg'
 

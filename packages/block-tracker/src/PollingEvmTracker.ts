@@ -101,7 +101,10 @@ export class PollingEvmTracker extends BaseBlockTracker {
                 }
             }
         }
-        throw new Error(`PollingBlockTracker - encountered error fetching block:`)
+        return {
+            hash: '0',
+            version: '0',
+        }
     }
 }
 

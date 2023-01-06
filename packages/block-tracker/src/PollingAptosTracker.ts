@@ -101,7 +101,10 @@ export class PollingAptosTracker extends BaseBlockTracker {
                     hash: nodes[0]?.transaction_version,
                 }
         }
-        throw new Error(`PollingBlockTracker - encountered error fetching block:\n${res.data}`)
+        return {
+            hash: '0',
+            version: '0',
+        }
     }
 }
 

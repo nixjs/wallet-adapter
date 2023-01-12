@@ -1,12 +1,10 @@
 import * as ethers from 'ethers'
 import { JsonFragment } from '@ethersproject/abi'
 import { Types } from '@nixjs23n6/types'
-import { PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
-import { EvmTypes } from './types'
-import ERC20 from './abis/erc20.json'
-import ERC721 from './abis/erc721.json'
-import ERC1155 from './abis/erc1155.json'
-import { EvmNativeConfig } from './evmNativeConfig'
+import { EvmTypes } from '../types'
+import ERC20 from '../abis/erc20.json'
+import ERC721 from '../abis/erc721.json'
+import ERC1155 from '../abis/erc1155.json'
 
 export function decodeTransactionLogFromABIs(logs: { topics: Array<string>; data: string }[]): Types.Undefined<EvmTypes.LogDescription[]> {
     const ABIs: JsonFragment[][] = [ERC20, ERC721, ERC1155]
@@ -82,16 +80,4 @@ export function decodeInputData(ABI: JsonFragment[], inputData: string): Types.N
     } catch (error) {
         return null
     }
-}
-
-export function getAddressExplorer(address: PrimitiveHexString, chainId: PrimitiveHexString): string {
-    const native = EvmNativeConfig[chainId]
-    if (!native) return ''
-    return `${native.explorer}/address/${address}`
-}
-
-export function getTransactionExplorer(address: PrimitiveHexString, chainId: PrimitiveHexString): string {
-    const native = EvmNativeConfig[chainId]
-    if (!native) return ''
-    return `${native.explorer}/tx/${address}`
 }

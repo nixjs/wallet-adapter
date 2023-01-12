@@ -1,5 +1,5 @@
 import { Interfaces, Types } from '@nixjs23n6/types'
-import { AssetTypes, TransactionTypes, TransactionEnums, EvmUtil, NftEnums } from '@nixjs23n6/utilities-adapter'
+import { AssetTypes, TransactionTypes, TransactionEnums, EvmUtil, NftEnums, PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
 import Bignumber from 'bignumber.js'
 import { GetTransactionJSONResponse } from 'moralis/common-evm-utils'
 import axios from 'axios'
@@ -16,7 +16,7 @@ export class MoralisProvider extends BaseProvider {
         }
     }
 
-    async getAssets(address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
+    async getAssets(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
         try {
             const assets: AssetTypes.Asset[] = []
             const response = await axios.get<Erc20TokenBalance[]>(`${this.config.endpoint}/${this.config.prefix}/${address}/erc20`, {
@@ -44,7 +44,7 @@ export class MoralisProvider extends BaseProvider {
         }
     }
 
-    async getAssetBalances(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>> {
+    async getAssetBalances(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>> {
         try {
             const amounts: AssetTypes.AssetAmount[] = []
 
@@ -69,7 +69,7 @@ export class MoralisProvider extends BaseProvider {
         }
     }
 
-    async getNativeAssetBalance(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>> {
+    async getNativeAssetBalance(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>> {
         try {
             const response = await axios.get<{ balance: string }>(`${this.config.endpoint}/${this.config.prefix}/${address}/balance`, {
                 headers: this.contentType,
@@ -93,7 +93,7 @@ export class MoralisProvider extends BaseProvider {
         }
     }
 
-    async getNfts(address: string): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>> {
+    async getNfts(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>> {
         try {
             const nfts: AssetTypes.Nft[] = []
 
@@ -117,7 +117,7 @@ export class MoralisProvider extends BaseProvider {
                         collection: '',
                         creator: owner_of,
                         description: ourMetadata && ourMetadata.description ? ourMetadata.description : '',
-                        id: `${token_address}_${token_id}`,
+                        id: `${token_address}__${token_id}`,
                         name: ourMetadata && ourMetadata.name ? ourMetadata.name : name || '',
                         uri: token_uri,
                         metadata: x,
@@ -131,7 +131,10 @@ export class MoralisProvider extends BaseProvider {
         }
     }
 
-    async getTransactions(address: string, size?: number | undefined): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>> {
+    async getTransactions(
+        address: PrimitiveHexString,
+        size?: number | undefined
+    ): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>> {
         try {
             const txns: TransactionTypes.Transaction[] = []
 
@@ -286,14 +289,14 @@ export class MoralisProvider extends BaseProvider {
         }
     }
 
-    async getERC20MetaData(address: string): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
+    async getERC20MetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
         try {
             const response = await axios.get<
                 {
                     decimals: number
                     name: string
                     symbol: string
-                    address: string
+                    address: PrimitiveHexString
                     logo?: string | null
                     logoHash?: string | null
                     thumbnail?: string | null

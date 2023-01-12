@@ -1,23 +1,13 @@
 import { Types, Interfaces } from '@nixjs23n6/types'
-import { AssetTypes, EvmUtil, TransactionTypes } from '@nixjs23n6/utilities-adapter'
+import { AssetTypes, EvmUtil, PrimitiveHexString, TransactionTypes } from '@nixjs23n6/utilities-adapter'
 import { EvmTypes } from './types'
 
-export interface ConfigData {
-    apiKey: string
-    endpoint: string
-    prefix?: string
-}
-
-export interface Config {
-    [chainId: string]: ConfigData
-}
-
 export abstract class BaseProvider {
-    #config: Config
-    #chainId: string
-    #configData: ConfigData
+    #config: EvmTypes.Config
+    #chainId: PrimitiveHexString
+    #configData: EvmTypes.ConfigData
 
-    constructor(config: Config, chainId: string) {
+    constructor(config: EvmTypes.Config, chainId: PrimitiveHexString) {
         this.#config = config
         this.#chainId = chainId
         if (!this.#config) throw new Error('Invalid parameters')
@@ -31,7 +21,7 @@ export abstract class BaseProvider {
         return EvmUtil.Erc20Tokens
     }
 
-    public get chainId(): string {
+    public get chainId(): PrimitiveHexString {
         return this.#chainId
     }
 
@@ -41,7 +31,7 @@ export abstract class BaseProvider {
         }
     }
 
-    public get config(): ConfigData {
+    public get config(): EvmTypes.ConfigData {
         return this.#configData
     }
 
@@ -49,14 +39,14 @@ export abstract class BaseProvider {
         return EvmUtil.Erc20Tokens.filter((t) => t.chainId === Number(this.#chainId))
     }
 
-    public getTokenInfo(address: string): Types.Undefined<EvmTypes.ERC20> {
+    public getTokenInfo(address: PrimitiveHexString): Types.Undefined<EvmTypes.ERC20> {
         return this.tokensByChain.find((t) => t.address.toLowerCase() === address.toLowerCase())
     }
 
-    abstract getAssets(address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>>
-    abstract getAssetBalances(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>>
-    abstract getNativeAssetBalance(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>>
-    abstract getNfts(address: string): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>>
-    abstract getTransactions(address: string, size?: number): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>>
-    abstract getERC20MetaData(address: string): Promise<Interfaces.ResponseData<EvmTypes.ERC20>>
+    abstract getAssets(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>>
+    abstract getAssetBalances(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>>
+    abstract getNativeAssetBalance(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>>
+    abstract getNfts(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>>
+    abstract getTransactions(address: PrimitiveHexString, size?: number): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>>
+    abstract getERC20MetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>>
 }

@@ -24,6 +24,11 @@ export namespace TransactionEnums {
         FAILED,
         SUCCESS,
     }
+    export enum GasPriceTypes {
+        SLOW = 'SLOW',
+        AVERAGE = 'AVERAGE',
+        FAST = 'FAST',
+    }
 }
 
 export namespace NftEnums {

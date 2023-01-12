@@ -1,38 +1,46 @@
-import { Types, Interfaces } from '@nixjs23n6/types'
-import { VaultTypes, IError, EvmUtil, TransactionTypes, AssetTypes, Helper, PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
+import { Interfaces, Types } from '@nixjs23n6/types'
+import produce from 'immer'
+import {
+    VaultTypes,
+    IError,
+    EvmUtil,
+    TransactionTypes,
+    TransactionEnums,
+    AssetTypes,
+    Helper,
+    NftEnums,
+    PrimitiveHexString,
+} from '@nixjs23n6/utilities-adapter'
 import { Contract, providers, utils, Wallet, BigNumber, PopulatedTransaction } from 'ethers'
 import BigNumberJs from 'bignumber.js'
-import { DefaultAsset } from '../const'
-import { EmvGasUtil, GasPriceTypes } from '../gas'
+import { EmvGasUtil } from '../gas'
 import { EvmNativeConfig } from '../evmNativeConfig'
 import { EvmAsset } from '../asset'
+import { EvmTypes } from '../types'
+import { ERC721_ABI, ERC1155_ABI } from '../abis'
+import { createEndpoint } from '../utils'
 
 export class EvmTransaction {
-    #chainId: string
-    #config: Types.Object<string>
+    #chainId: PrimitiveHexString
+    #config: EvmTypes.Config
     #provider: providers.BaseProvider
 
-    constructor(chainId: string, config: Types.Object<string>) {
+    constructor(chainId: PrimitiveHexString, config: EvmTypes.Config) {
         this.#chainId = chainId
         this.#config = config
-        console.log('this.#config[this.#chainId]', this.#config[this.#chainId])
-        this.#provider = new providers.JsonRpcProvider(this.#config[this.#chainId])
-    }
-
-    #getWallet(owner: VaultTypes.AccountObject): Wallet {
-        if (!owner.publicKeyHex || !owner.privateKeyHex)
-            throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
-                owner: 'Invalid information',
-            })
-        return new Wallet(owner.privateKeyHex, this.#provider)
-    }
-
-    #getNativeAsset(assetId: string): AssetTypes.Asset {
-        return DefaultAsset
+        this.#provider = new providers.JsonRpcProvider(createEndpoint(this.#config[this.#chainId]))
     }
 
     public get chainId(): string {
         return this.#chainId
+    }
+
+    public get getFeeDescription() {
+        return EmvGasUtil.FeeDescriptions
+    }
+
+    public get networkCongestion() {
+        return EmvGasUtil.NetworkCongestionThresholds
     }
 
     public get assets(): AssetTypes.Asset[] {
@@ -51,22 +59,120 @@ export class EvmTransaction {
         return assets
     }
 
-    async estimateGasUnitPrice(chainId: PrimitiveHexString): Promise<Types.Nullable<string>> {
-        try {
-            if (!chainId) throw new Error('The chain id not found.')
-            // const res = await this.#provide.
-            // if (res.status === 'SUCCESS' && res.data?.gas_estimate) {
-            //     return String(res.data.gas_estimate)
-            // } else {
-            throw new Error('The gas price not found')
-            // }
-        } catch (error) {
-            console.log('[estimateGasUnitPrice]', error)
-            return null
+    #getWallet(owner: VaultTypes.AccountObject): Wallet {
+        if (!owner.publicKeyHex || !owner.privateKeyHex)
+            throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                owner: 'Invalid information',
+            })
+        return new Wallet(owner.privateKeyHex, this.#provider)
+    }
+
+    async #estimateFee(
+        speed: TransactionEnums.GasPriceTypes = TransactionEnums.GasPriceTypes.AVERAGE,
+        gasLimit = EmvGasUtil.BaseGasNativeLimit
+    ) {
+        const { gasPrice, lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas } = await this.#provider.getFeeData()
+        const params: { estimateFee: string; gasPrice?: string; maxFeePerGas?: string; maxPriorityFeePerGas?: string; eip1559?: boolean } =
+            {
+                estimateFee: '0',
+                eip1559: true,
+            }
+
+        let baseFee: BigNumber
+        if (maxFeePerGas && maxPriorityFeePerGas) {
+            if (!lastBaseFeePerGas) {
+                baseFee = maxFeePerGas.sub(maxPriorityFeePerGas)
+            } else {
+                baseFee = lastBaseFeePerGas
+            }
+
+            let _maxFeePerGas = EmvGasUtil.getBaseFeeBasedOnType(baseFee.toString(), speed)
+            const _maxPriorityFeePerGas = EmvGasUtil.getPriorityFeeBasedOnType(
+                baseFee?.toString() as string,
+                gasPrice!?.toString(),
+                speed
+            ).toString()
+            if (_maxPriorityFeePerGas && BigNumberJs(_maxPriorityFeePerGas).gt(_maxFeePerGas)) {
+                _maxFeePerGas = _maxPriorityFeePerGas
+            }
+
+            params.eip1559 = true
+            params.maxFeePerGas = _maxFeePerGas
+            params.maxPriorityFeePerGas = _maxPriorityFeePerGas
+            params.gasPrice = gasPrice
+                ? gasPrice.toString()
+                : BigNumberJs(_maxPriorityFeePerGas).plus(BigNumberJs(_maxPriorityFeePerGas)).toString()
+
+            params.estimateFee = EmvGasUtil.calculateFee(
+                EmvGasUtil.getBaseFeeBasedOnType(baseFee.toString()!, speed),
+                gasLimit.toString(),
+                true
+            )
+        } else {
+            params.eip1559 = false
+            params.gasPrice = EmvGasUtil.getGasBasedOnType(gasPrice!.toString(), speed) // wei
+            params.estimateFee = EmvGasUtil.calculateFee(params.gasPrice.toString(), gasLimit.toString(), true)
+        }
+        return params
+    }
+
+    getGasCostBySpeed(gasLimit: string, speed: TransactionEnums.GasPriceTypes, gasPrice: BigNumber, baseFee: Types.Nullable<BigNumber>) {
+        const params: EvmTypes.GasCost = {
+            gasLimit: Helper.Decimal.toDecimal(utils.formatUnits(gasLimit, 'gwei'), EvmUtil.BaseDecimals),
+            eip1559: false,
+            estimateFee: '0',
+        }
+        params.gasPrice = BigNumberJs(EmvGasUtil.getBaseFeeBasedOnType(gasPrice.toString(), speed)).times(gasLimit).toFixed()
+        if (baseFee) {
+            const _baseFee = baseFee!.toString()
+            params.maxFeePerGas = EmvGasUtil.getBaseFeeBasedOnType(_baseFee, speed).toString()
+            params.maxPriorityFeePerGas = EmvGasUtil.getPriorityFeeBasedOnType(_baseFee, gasPrice.toString(), speed).toString()
+            params.estimateFee = EmvGasUtil.calculateFee(EmvGasUtil.getBaseFeeBasedOnType(_baseFee, speed), gasLimit.toString(), true)
+            params.eip1559 = true
+        } else {
+            params.estimateFee = EmvGasUtil.calculateFee(
+                EmvGasUtil.getBaseFeeBasedOnType(gasPrice.toString(), speed),
+                gasLimit.toString(),
+                true
+            )
+        }
+        return params
+    }
+
+    async getGasCosts(gasLimit: string): Promise<Record<TransactionEnums.GasPriceTypes, EvmTypes.GasCost>> {
+        const { gasPrice, lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas } = await this.#provider.getFeeData()
+        let _gasPrice: BigNumber
+        let _baseFee: Types.Nullable<BigNumber> = null
+        if (maxFeePerGas && maxPriorityFeePerGas) {
+            _gasPrice = maxFeePerGas.add(maxPriorityFeePerGas)
+            if (!lastBaseFeePerGas) {
+                _baseFee = maxFeePerGas.sub(maxPriorityFeePerGas)
+            } else {
+                _baseFee = lastBaseFeePerGas
+            }
+        } else {
+            _gasPrice = gasPrice!
+        }
+
+        const low = this.getGasCostBySpeed(gasLimit, TransactionEnums.GasPriceTypes.SLOW, _gasPrice, _baseFee)
+        const average = this.getGasCostBySpeed(gasLimit, TransactionEnums.GasPriceTypes.AVERAGE, _gasPrice, _baseFee)
+        const fast = this.getGasCostBySpeed(gasLimit, TransactionEnums.GasPriceTypes.FAST, _gasPrice, _baseFee)
+
+        return {
+            [TransactionEnums.GasPriceTypes.SLOW]: low,
+            [TransactionEnums.GasPriceTypes.AVERAGE]: average,
+            [TransactionEnums.GasPriceTypes.FAST]: fast,
+            // [TransactionEnums.GasPriceTypes.FAST]: BigNumberJs(EmvGasUtil.getBaseFeeBasedOnType(lastBaseFeePerGas.toString()!, TransactionEnums.GasPriceTypes.FAST))
+            //     .times(gasLimit)
+            //     .toFixed(),
         }
     }
 
-    async getBalance(address: string): Promise<number> {
+    async getFeeData(): Promise<providers.FeeData> {
+        return await this.#provider.getFeeData()
+    }
+
+    async getBalance(address: PrimitiveHexString): Promise<number> {
         if (!address)
             throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
                 owner: 'Invalid information',
@@ -78,9 +184,9 @@ export class EvmTransaction {
     async send(
         asset: AssetTypes.Asset,
         from: VaultTypes.AccountObject,
-        to: string,
+        to: PrimitiveHexString,
         amount: string,
-        speed: GasPriceTypes = GasPriceTypes.AVERAGE
+        speed: TransactionEnums.GasPriceTypes = TransactionEnums.GasPriceTypes.AVERAGE
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
         try {
             if (!from.address || !from.publicKeyHex)
@@ -99,41 +205,28 @@ export class EvmTransaction {
             const ourWallet = this.#getWallet(from)
 
             const nonce = await ourWallet.getTransactionCount()
+            const gasLimit = BigNumber.from(EmvGasUtil.BaseGasNativeLimit)
             const transaction: providers.TransactionRequest = {
                 nonce,
-                gasLimit: BigNumber.from(EmvGasUtil.BaseGasNativeLimit),
-                // gasPrice: EmvGasUtil.getGasBasedOnType(gasPrice.toString(), speed), // wei
+                gasLimit,
                 to,
                 value: utils.parseEther(amount),
                 data: '0x',
             }
 
-            const gasPrice = await this.#provider.getGasPrice()
-            const { lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas } = await this.#provider.getFeeData()
-            let estimateFee = '0'
+            const { estimateFee, eip1559, gasPrice, maxFeePerGas, maxPriorityFeePerGas } = await this.#estimateFee(speed)
 
-            if (maxFeePerGas && maxPriorityFeePerGas) {
-                let _maxFeePerGas = EmvGasUtil.getBaseFeeBasedOnType(maxFeePerGas?.toString() as string, speed)
-                const _maxPriorityFeePerGas = EmvGasUtil.getPriorityFeeBasedOnType(
-                    lastBaseFeePerGas?.toString() as string,
-                    gasPrice?.toString(),
-                    speed
-                ).toString()
-                if (_maxPriorityFeePerGas && BigNumberJs(_maxFeePerGas).gt(_maxFeePerGas)) {
-                    _maxFeePerGas = _maxPriorityFeePerGas
-                }
-
-                transaction.maxFeePerGas = _maxFeePerGas
-                transaction.maxPriorityFeePerGas = _maxPriorityFeePerGas
-                estimateFee = EmvGasUtil.calculateFee(_maxPriorityFeePerGas, EmvGasUtil.BaseGasNativeLimit.toString(), false)
+            if (eip1559) {
+                transaction.maxFeePerGas = maxFeePerGas
+                transaction.maxPriorityFeePerGas = maxPriorityFeePerGas
             } else {
-                transaction.gasPrice = EmvGasUtil.getGasBasedOnType(gasPrice.toString(), speed) // wei
-                estimateFee = EmvGasUtil.calculateFee(transaction.gasPrice.toString(), EmvGasUtil.BaseGasNativeLimit.toString(), false)
+                transaction.gasPrice = gasPrice
             }
 
             const rawTxn = await ourWallet.populateTransaction(transaction)
-            const limit = rawTxn.gasLimit ? utils.formatUnits(rawTxn.gasLimit, 'gwei') : '' // gwei -> tether
-            const price = rawTxn.gasPrice ? utils.formatEther(rawTxn.gasPrice) : '' // wei -> tether
+
+            const limit = utils.formatUnits(gasLimit, 'gwei')
+            const price = gasPrice ? utils.formatEther(gasPrice) : '' // wei -> tether
             return {
                 data: {
                     amount,
@@ -141,9 +234,9 @@ export class EvmTransaction {
                     from,
                     to,
                     chainId: this.#chainId,
-                    gasLimit: limit ? Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals) : '',
+                    gasLimit: Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals),
                     gasPrice: price ? Helper.Decimal.toDecimal(price, EvmUtil.BaseDecimals) : '',
-                    transactionFee: estimateFee ? Helper.Decimal.toDecimal(estimateFee, EvmUtil.BaseDecimals) : '',
+                    transactionFee: estimateFee,
                     rawData: rawTxn,
                     transactionType: 'transfer',
                 },
@@ -158,9 +251,9 @@ export class EvmTransaction {
     async sendERC20Token(
         asset: AssetTypes.Asset,
         from: VaultTypes.AccountObject,
-        to: string,
+        to: PrimitiveHexString,
         amount: string,
-        speed: GasPriceTypes = GasPriceTypes.AVERAGE
+        speed: TransactionEnums.GasPriceTypes = TransactionEnums.GasPriceTypes.AVERAGE
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
         try {
             if (!from.address || !from.publicKeyHex)
@@ -198,38 +291,34 @@ export class EvmTransaction {
                 },
             ]
             const ourWallet = this.#getWallet(from)
-            const contract = new Contract(tokenInfo.address, contractAbiFragment, ourWallet)
 
             const numberOfTokens = utils.parseUnits(amount, tokenInfo.decimals)
+            const args: Array<any> = [to, numberOfTokens]
+            const contract = new Contract(tokenInfo.address, contractAbiFragment, ourWallet)
 
-            const populatedTransaction: PopulatedTransaction = { gasLimit: BigNumber.from(EmvGasUtil.BaseGasERC20Limit) }
+            const gasLimit = BigNumber.from(EmvGasUtil.BaseGasERC20Limit)
+            const populatedTransaction: PopulatedTransaction = { gasLimit }
 
-            const gasPrice = await this.#provider.getGasPrice()
-            const { lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas } = await this.#provider.getFeeData()
-            let estimateFee = '0'
+            const { estimateFee, eip1559, gasPrice, maxFeePerGas, maxPriorityFeePerGas } = await this.#estimateFee(
+                speed,
+                EmvGasUtil.BaseGasERC20Limit
+            )
 
-            if (maxFeePerGas && maxPriorityFeePerGas) {
-                let _maxFeePerGas = EmvGasUtil.getBaseFeeBasedOnType(maxFeePerGas?.toString() as string, speed)
-                const _maxPriorityFeePerGas = EmvGasUtil.getPriorityFeeBasedOnType(
-                    lastBaseFeePerGas?.toString() as string,
-                    gasPrice?.toString(),
-                    speed
-                ).toString()
-                if (_maxPriorityFeePerGas && BigNumberJs(_maxFeePerGas).gt(_maxFeePerGas)) {
-                    _maxFeePerGas = _maxPriorityFeePerGas
-                }
-                populatedTransaction.maxFeePerGas = BigNumber.from(_maxFeePerGas)
-                populatedTransaction.maxPriorityFeePerGas = BigNumber.from(_maxPriorityFeePerGas)
-                estimateFee = EmvGasUtil.calculateFee(_maxPriorityFeePerGas, EmvGasUtil.BaseGasERC20Limit.toString(), false)
+            if (eip1559) {
+                populatedTransaction.maxFeePerGas = BigNumber.from(maxFeePerGas)
+                populatedTransaction.maxPriorityFeePerGas = BigNumber.from(maxPriorityFeePerGas)
             } else {
-                populatedTransaction.gasPrice = BigNumber.from(EmvGasUtil.getGasBasedOnType(gasPrice.toString(), speed)) // wei
-                estimateFee = EmvGasUtil.calculateFee(gasPrice.toString(), EmvGasUtil.BaseGasERC20Limit.toString(), false)
+                populatedTransaction.gasPrice = BigNumber.from(gasPrice)
             }
 
-            const rawTxn = await contract.populateTransaction.transfer(to, numberOfTokens, populatedTransaction)
+            //  const gasLimit = await contract.estimateGas['transfer(address,uint256)'](...args, {
+            //      gasPrice: populatedTransaction.gasPrice,
+            //  })
 
-            const limit = rawTxn.gasLimit ? utils.formatUnits(rawTxn.gasLimit, 'gwei') : '' // gwei -> tether
-            const price = rawTxn.gasPrice ? utils.formatEther(rawTxn.gasPrice) : '' // wei -> tether
+            const rawTxn = await contract.populateTransaction.transfer(...args, populatedTransaction)
+
+            const limit = utils.formatUnits(gasLimit, 'gwei') // gwei -> tether
+            const price = gasPrice ? utils.formatEther(gasPrice) : '' // wei -> tether
 
             return {
                 data: {
@@ -240,7 +329,7 @@ export class EvmTransaction {
                     chainId: this.#chainId,
                     gasLimit: limit ? Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals) : '',
                     gasPrice: price ? Helper.Decimal.toDecimal(price, EvmUtil.BaseDecimals) : '',
-                    transactionFee: estimateFee ? Helper.Decimal.toDecimal(estimateFee, EvmUtil.BaseDecimals) : '',
+                    transactionFee: estimateFee,
                     rawData: rawTxn,
                     transactionType: 'transfer',
                 },
@@ -252,20 +341,179 @@ export class EvmTransaction {
         }
     }
 
+    async transferNFT(
+        Nft: AssetTypes.Nft,
+        from: VaultTypes.AccountObject,
+        to: PrimitiveHexString,
+        amount: string,
+        speed: TransactionEnums.GasPriceTypes = TransactionEnums.GasPriceTypes.AVERAGE
+    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any> & TransactionTypes.RawTransferNFTTransaction>> {
+        try {
+            if (!from.address || !from.publicKeyHex)
+                throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
+                    owner: 'Invalid information',
+                })
+
+            const ourWallet = this.#getWallet(from)
+
+            let contract: Contract
+
+            const nftId = Nft.id.split('__')
+            if (nftId.length > 1) {
+                const tokenAddress = nftId[0]
+                const tokenId = nftId[1]
+                const args: Array<any> = [from.address, to, tokenId]
+                if (Nft.type === NftEnums.NftTokenType.ERC721) {
+                    contract = new Contract(tokenAddress, ERC721_ABI, ourWallet)
+                } else {
+                    contract = new Contract(tokenAddress, ERC1155_ABI, ourWallet)
+                    args.push(amount)
+                }
+
+                const populatedTransaction: PopulatedTransaction = {}
+
+                const { estimateFee, eip1559, gasPrice, maxFeePerGas, maxPriorityFeePerGas } = await this.#estimateFee(
+                    speed,
+                    EmvGasUtil.BaseGasERC721TransferringLimit
+                )
+
+                if (eip1559) {
+                    populatedTransaction.maxFeePerGas = BigNumber.from(maxFeePerGas)
+                    populatedTransaction.maxPriorityFeePerGas = BigNumber.from(maxPriorityFeePerGas)
+                } else {
+                    populatedTransaction.gasPrice = BigNumber.from(gasPrice)
+                }
+
+                const gasLimit = await contract.estimateGas['safeTransferFrom(address,address,uint256)'](...args, {
+                    gasPrice: populatedTransaction.gasPrice,
+                })
+
+                if (gasLimit.lt(BigNumber.from(EmvGasUtil.BaseGasERC721TransferringLimit))) {
+                    populatedTransaction.gasLimit = BigNumber.from(EmvGasUtil.BaseGasERC721TransferringLimit)
+                } else {
+                    populatedTransaction.gasLimit = gasLimit
+                }
+
+                const rawTxn = await contract.populateTransaction['safeTransferFrom(address,address,uint256)'](
+                    ...args,
+                    populatedTransaction
+                )
+
+                const limit = utils.formatUnits(populatedTransaction.gasLimit, 'gwei') // gwei -> tether
+                const price = gasPrice ? utils.formatEther(gasPrice) : '' // wei -> tether
+
+                return {
+                    data: {
+                        amount,
+                        asset: Nft,
+                        from,
+                        to,
+                        chainId: this.#chainId,
+                        gasLimit: limit ? Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals) : '',
+                        gasPrice: price ? Helper.Decimal.toDecimal(price, EvmUtil.BaseDecimals) : '',
+                        transactionFee: estimateFee,
+                        rawData: rawTxn,
+                        transactionType: 'transfer-nft',
+                    },
+                    status: 'SUCCESS',
+                }
+            }
+            throw new Error('Failed to transfer NFT')
+        } catch (error) {
+            console.log(error)
+            return { error, status: 'ERROR' }
+        }
+    }
+
     async simulateTransaction(
-        chainId: string,
-        rawTxn: any,
         owner: VaultTypes.AccountObject,
         type: 'transfer' | 'script',
-        gasLimit?: string,
-        gasPrice?: string
+        data: EvmTypes.SimulateTransactionNative | EvmTypes.SimulateTransactionContract
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
         try {
             if (!owner.address || !owner.publicKeyHex)
                 throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format({
                     owner: 'Invalid information',
                 })
+            const ourWallet = this.#getWallet(owner)
+            if (data.kind === 'native') {
+                const { raw, speed } = data.params
+                const { estimateFee, eip1559, gasPrice, maxFeePerGas, maxPriorityFeePerGas } = await this.#estimateFee(
+                    speed,
+                    EmvGasUtil.BaseGasNativeLimit
+                )
 
+                const ourTxnRequest = produce(raw, (draft) => {
+                    if (eip1559) {
+                        draft.maxFeePerGas = maxFeePerGas
+                        draft.maxPriorityFeePerGas = maxPriorityFeePerGas
+                    } else {
+                        draft.gasPrice = gasPrice
+                    }
+                })
+
+                const pTnx = await ourWallet.populateTransaction(ourTxnRequest)
+
+                const limit = pTnx.gasLimit ? utils.formatUnits(pTnx.gasLimit, 'gwei') : '' // gwei -> tether
+                const price = gasPrice ? utils.formatEther(gasPrice) : '' // wei -> tether
+                return {
+                    data: {
+                        chainId: this.#chainId,
+                        from: owner,
+                        transactionFee: estimateFee,
+                        to: '',
+                        gasLimit: limit ? Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals) : '',
+                        gasPrice: price ? Helper.Decimal.toDecimal(price, EvmUtil.BaseDecimals) : '',
+                        rawData: pTnx,
+                        transactionType: type,
+                    },
+                    status: 'SUCCESS',
+                }
+            } else if (data.kind === 'contract') {
+                const populatedTransaction: PopulatedTransaction = {}
+                const { abi, args, contractAddress, method, speed } = data.params
+
+                const contract = new Contract(contractAddress, abi, ourWallet)
+
+                const { estimateFee, eip1559, gasPrice, maxFeePerGas, maxPriorityFeePerGas } = await this.#estimateFee(
+                    speed,
+                    EmvGasUtil.BaseGasERC20Limit
+                )
+                if (eip1559) {
+                    populatedTransaction.maxFeePerGas = BigNumber.from(maxFeePerGas)
+                    populatedTransaction.maxPriorityFeePerGas = BigNumber.from(maxPriorityFeePerGas)
+                } else {
+                    populatedTransaction.gasPrice = BigNumber.from(gasPrice)
+                }
+
+                const gasLimit = await contract.estimateGas['safeTransferFrom(address,address,uint256)'](...args, {
+                    gasPrice: populatedTransaction.gasPrice,
+                })
+                if (gasLimit.lt(BigNumber.from(EmvGasUtil.BaseGasERC20Limit))) {
+                    populatedTransaction.gasLimit = BigNumber.from(EmvGasUtil.BaseGasERC20Limit)
+                } else {
+                    populatedTransaction.gasLimit = gasLimit
+                }
+
+                const cTnx = await contract.populateTransaction[method](...args, populatedTransaction)
+
+                const limit = cTnx.gasLimit ? utils.formatUnits(cTnx.gasLimit, 'gwei') : '' // gwei -> tether
+                const price = gasPrice ? utils.formatEther(gasPrice) : '' // wei -> tether
+
+                return {
+                    data: {
+                        chainId: this.#chainId,
+                        from: owner,
+                        transactionFee: estimateFee,
+                        to: '',
+                        gasLimit: limit ? Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals) : '',
+                        gasPrice: price ? Helper.Decimal.toDecimal(price, EvmUtil.BaseDecimals) : '',
+                        rawData: cTnx,
+                        transactionType: type,
+                    },
+                    status: 'SUCCESS',
+                }
+            }
             throw IError.ErrorConfigs[IError.ERROR_TYPE.DATA_NOT_FOUND].format()
         } catch (error) {
             console.log('[SimulateTransaction]', error)
@@ -283,9 +531,5 @@ export class EvmTransaction {
             console.log('[executeTransaction]', error)
             return { error, status: 'ERROR' }
         }
-    }
-
-    getFeeDescription() {
-        return EmvGasUtil.FeeDescriptions
     }
 }

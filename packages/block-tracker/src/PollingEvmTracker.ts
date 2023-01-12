@@ -1,4 +1,4 @@
-import { AlchemyProvider, MoralisProvider, ConfigData, EvmEnums } from '@nixjs23n6/evm'
+import { AlchemyProvider, MoralisProvider, EvmTypes, EvmEnums } from '@nixjs23n6/evm'
 import { BaseBlockTracker, PollingBlockTrackerOptions, Block } from './BaseBlockTracker'
 
 const sec = 1000
@@ -12,12 +12,12 @@ export class PollingEvmTracker extends BaseBlockTracker {
     #retryTimeout: number
 
     #keepEventLoopActive: boolean
-    #evmConfig: Record<string, Record<string, ConfigData>>
+    #evmConfig: Record<string, Record<string, EvmTypes.ConfigData>>
     #chainId: string
 
     // #setSkipCacheFlag: boolean
 
-    constructor(opts: PollingBlockTrackerOptions, config: Record<string, Record<string, ConfigData>>, chainId: string) {
+    constructor(opts: PollingBlockTrackerOptions, config: Record<string, Record<string, EvmTypes.ConfigData>>, chainId: string) {
         // parse + validate args
         if (!opts.address || !opts.nodeURL) {
             throw new Error('PollingBlockTracker - no address/nodeURL specified.')

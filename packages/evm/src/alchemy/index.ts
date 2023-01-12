@@ -1,5 +1,5 @@
 import { Interfaces, Types } from '@nixjs23n6/types'
-import { AssetTypes, TransactionEnums, TransactionTypes, EvmUtil, Helper } from '@nixjs23n6/utilities-adapter'
+import { AssetTypes, TransactionEnums, TransactionTypes, EvmUtil, Helper, PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
 import {
     OwnedNftsResponse,
     TokenBalancesResponse,
@@ -9,12 +9,13 @@ import {
     Nft,
 } from 'alchemy-sdk'
 import axios, { AxiosResponse } from 'axios'
+import BigNumber from 'bignumber.js'
 import { BaseProvider } from '../base'
 import { EvmTypes } from '../types'
 import { AlchemyResponse } from './types'
 
 export class AlchemyProvider extends BaseProvider {
-    async getAssets(address: string): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
+    async getAssets(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
         try {
             const assets: AssetTypes.Asset[] = []
 
@@ -82,7 +83,7 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getAssetBalances(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>> {
+    async getAssetBalances(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount[]>> {
         try {
             const amounts: AssetTypes.AssetAmount[] = []
 
@@ -114,7 +115,7 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getNativeAssetBalance(address: string): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>> {
+    async getNativeAssetBalance(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>> {
         try {
             const response = await axios.post<AlchemyResponse<string>>(
                 `${this.config.endpoint}/v2/${this.config.apiKey}`,
@@ -144,7 +145,7 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getNfts(address: string): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>> {
+    async getNfts(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>> {
         try {
             const nfts: AssetTypes.Nft[] = []
 
@@ -159,16 +160,18 @@ export class AlchemyProvider extends BaseProvider {
                 const { ownedNfts } = response.data
                 ownedNfts.forEach((x) => {
                     const { contract, description, title, tokenUri, id } = x as any
-                    nfts.push({
-                        collection: '',
-                        creator: contract.address,
-                        description,
-                        id: `${contract.address}_${Number(id?.tokenId || new Date().getTime())}`,
-                        name: title,
-                        uri: tokenUri?.raw || tokenUri?.gateway || '',
-                        metadata: x,
-                        type: contract.tokenType,
-                    } as AssetTypes.Nft)
+                    if (id?.tokenId) {
+                        nfts.push({
+                            collection: '',
+                            creator: contract.address,
+                            description,
+                            id: `${contract.address}__${BigNumber(id.tokenId).toString()}`,
+                            name: title,
+                            uri: tokenUri?.raw || tokenUri?.gateway || '',
+                            metadata: x,
+                            type: contract.tokenType,
+                        } as AssetTypes.Nft)
+                    }
                 })
             }
             return { status: 'SUCCESS', data: nfts }
@@ -177,7 +180,10 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getTransactions(address: string, size?: number | undefined): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>> {
+    async getTransactions(
+        address: PrimitiveHexString,
+        size?: number | undefined
+    ): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>> {
         try {
             const defaultParams = {
                 toBlock: 'latest',
@@ -234,7 +240,7 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getERC20MetaData(address: string): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
+    async getERC20MetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
         try {
             const response = await axios.post<AlchemyResponse<TokenMetadataResponse>>(
                 `${this.config.endpoint}/v2/${this.config.apiKey}`,
@@ -269,7 +275,7 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getNFTMetaData(address: string, tokenId: number, refreshCache = false): Promise<Interfaces.ResponseData<Nft>> {
+    async getNFTMetaData(address: PrimitiveHexString, tokenId: number, refreshCache = false): Promise<Interfaces.ResponseData<Nft>> {
         try {
             const response = await axios.get<Nft>(`${this.config.endpoint}/nft/v2/${this.config.apiKey}`, {
                 headers: this.contentType,
@@ -293,7 +299,7 @@ export class AlchemyProvider extends BaseProvider {
     }
 
     #getTransactionResponse(
-        address: string,
+        address: PrimitiveHexString,
         data: AxiosResponse<
             AlchemyResponse<{
                 transfers: AssetTransfersWithMetadataResult[]

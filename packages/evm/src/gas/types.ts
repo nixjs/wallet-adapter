@@ -1,18 +1,8 @@
-export interface GasFeeInfo {
-    nativeValue: string
-    fiatValue: string
-    nativeSymbol: string
-    fiatSymbol: string
-}
-export enum GasPriceTypes {
-    SLOW = 'SLOW',
-    AVERAGE = 'AVERAGE',
-    FAST = 'FAST',
-    INSTANT = 'INSTANT',
-}
+import { TransactionTypes, TransactionEnums } from '@nixjs23n6/utilities-adapter'
+
 export interface GasFeeType {
-    [GasPriceTypes.SLOW]: GasFeeInfo
-    [GasPriceTypes.AVERAGE]: GasFeeInfo
-    [GasPriceTypes.FAST]: GasFeeInfo
-    [GasPriceTypes.INSTANT]: GasFeeInfo
+    [TransactionEnums.GasPriceTypes.SLOW]: TransactionTypes.GasFeeInfo
+    [TransactionEnums.GasPriceTypes.AVERAGE]: TransactionTypes.GasFeeInfo
+    [TransactionEnums.GasPriceTypes.FAST]: TransactionTypes.GasFeeInfo
+    // [GasPriceTypes.INSTANT]: TransactionTypes.GasFeeInfo
 }

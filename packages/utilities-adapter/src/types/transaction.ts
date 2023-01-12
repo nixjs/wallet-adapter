@@ -85,4 +85,9 @@ export namespace TransactionTypes {
         asset: AssetTypes.Asset
         type: 'gas' | 'none'
     }
+    export interface GasFeeInfo {
+        title: string
+        description: string
+        eta: string
+    }
 }

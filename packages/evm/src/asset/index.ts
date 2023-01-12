@@ -4,15 +4,17 @@ import { EvmNativeConfig } from '../evmNativeConfig'
 export class EvmAsset {
     public static assets(chainId: PrimitiveHexString): AssetTypes.Asset[] {
         const assets = EvmUtil.Erc20Tokens.filter((t) => t.chainId === Number(chainId)).map(
-            ({ address, decimals, logoURI, name, symbol }) =>
-                ({
-                    assetId: address,
+            ({ address, decimals, logoURI, name, symbol }) => {
+                const isNative = EvmNativeConfig[chainId].native.assetId.toLowerCase() === symbol.toLowerCase()
+                return {
+                    assetId: isNative ? symbol : address,
                     decimals,
-                    isNative: EvmNativeConfig[chainId].native.assetId.toLowerCase() === name.toLowerCase(),
+                    isNative,
                     logoUrl: logoURI,
                     name,
                     symbol,
-                } as AssetTypes.Asset)
+                } as AssetTypes.Asset
+            }
         )
         if (!assets) return []
         return assets

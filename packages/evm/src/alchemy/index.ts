@@ -59,7 +59,7 @@ export class AlchemyProvider extends BaseProvider {
 
                 const requestTasks: Promise<Interfaces.ResponseData<EvmTypes.ERC20>>[] = []
                 assetNoInfo.forEach((x) => {
-                    const erc20 = this.getERC20MetaData(x.contractAddress)
+                    const erc20 = this.getTokenMetaData(x.contractAddress)
                     requestTasks.push(erc20)
                 })
                 const results = await Promise.all(requestTasks)
@@ -240,7 +240,7 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getERC20MetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
+    async getTokenMetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
         try {
             const response = await axios.post<AlchemyResponse<TokenMetadataResponse>>(
                 `${this.config.endpoint}/v2/${this.config.apiKey}`,

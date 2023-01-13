@@ -1,15 +1,15 @@
 {
     "name": "@nixjs23n6/evm",
-    "version": "2.0.0-alpha.7",
-    "description": "Fetch token data",
+    "version": "2.0.0-alpha.8",
+    "description": "Evm utilities",
     "sideEffects": false,
     "main": "lib/cjs/index.js",
     "module": "lib/esm/index.js",
     "browser": "lib/esm/index.js",
     "types": "lib/types/index.d.ts",
     "keywords": [
-        "token-data",
-        "token-balance",
+        "evm",
+        "ethereum",
         "typescript",
         "web"
     ],
@@ -38,9 +38,9 @@
         "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
     },
     "dependencies": {
-        "@nixjs23n6/move-transaction": "^2.0.0-alpha.7",
+        "@nixjs23n6/move-transaction": "^2.0.0-alpha.8",
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^2.0.0-alpha.7",
+        "@nixjs23n6/utilities-adapter": "^2.0.0-alpha.8",
         "alchemy-sdk": "^2.2.5",
         "axios": ">1.1.0",
         "bignumber.js": "^9.1.0",

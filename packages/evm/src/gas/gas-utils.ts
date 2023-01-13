@@ -11,8 +11,8 @@ export namespace EmvGasUtil {
     // const FastestMultiplier = 1.21828571429
     const LIMITER = 25_000_000_000
     export const BaseGasNativeLimit = 21_000
-    export const BaseGasERC20Limit = 60_000
-    export const BaseGasERC721TransferringLimit = 250_000
+    export const BaseGasERC20Limit = 65_000
+    export const BaseGasERC721TransferringLimit = 85_000
 
     export const NetworkCongestionThresholds = {
         NOT_BUSY: 0,
@@ -61,6 +61,11 @@ export namespace EmvGasUtil {
     //     return gpBN.times(1.75).toFixed(0)
     // }
 
+    /**
+     * Get gas based by type
+     * @param gasPrice baseFeePerGas or gasPrice
+     * @param gasPriceType SLOW | AVERAGE | FAST
+     */
     export const getGasBasedOnType = (gasPrice: string, gasPriceType: TransactionEnums.GasPriceTypes): string => {
         switch (gasPriceType) {
             case TransactionEnums.GasPriceTypes.SLOW:
@@ -76,10 +81,19 @@ export namespace EmvGasUtil {
         }
     }
 
+    /**
+     * Get min priority fee
+     */
     export const getMinPriorityFee = (): string => {
         return Helper.Decimal.toDecimal('1.25', 9)
     }
 
+    /**
+     * Get priority fee based by type
+     * @param baseFeePerGas
+     * @param gasPrice
+     * @param gasPriceType SLOW | AVERAGE | FAST
+     */
     export const getPriorityFeeBasedOnType = (
         baseFeePerGas: string,
         gasPrice: string,
@@ -112,6 +126,12 @@ export namespace EmvGasUtil {
         if (BigNumber(returnVal).lt(minFee)) return minFee
         return returnVal.toFixed(0)
     }
+
+    /**
+     * Get fee based by type
+     * @param baseFee
+     * @param gasPriceType SLOW | AVERAGE | FAST
+     */
     export const getBaseFeeBasedOnType = (baseFee: string, gasPriceType: TransactionEnums.GasPriceTypes): string => {
         const baseFeeBN = BigNumber(baseFee)
         switch (gasPriceType) {

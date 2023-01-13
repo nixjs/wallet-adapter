@@ -200,7 +200,7 @@ export class MoralisProvider extends BaseProvider {
 
                                 const erc20: Types.Undefined<EvmTypes.ERC20> = this.getTokenInfo(String(to_address))
                                 // if (!erc20) {
-                                //     const erc20s = await this.getERC20MetaData(String(to_address))
+                                //     const erc20s = await this.getTokenMetaData(String(to_address))
                                 //     if (erc20s.status === 'SUCCESS' && erc20s.data) {
                                 //         erc20 = Object.assign({}, { ...erc20s.data })
                                 //     }
@@ -250,7 +250,7 @@ export class MoralisProvider extends BaseProvider {
                         //         to = log.args.to
                         //         let erc20: Types.Undefined<EvmTypes.ERC20> = this.getTokenInfo(String(to_address))
                         //         if (!erc20) {
-                        //             const erc20s = await this.getERC20MetaData([String(to_address)])
+                        //             const erc20s = await this.getTokenMetaData([String(to_address)])
                         //             if (erc20s.status === 'SUCCESS' && erc20s.data && erc20s.data?.length > 0) {
                         //                 erc20 = erc20s.data[0]
                         //             }
@@ -289,7 +289,7 @@ export class MoralisProvider extends BaseProvider {
         }
     }
 
-    async getERC20MetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
+    async getTokenMetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
         try {
             const response = await axios.get<
                 {

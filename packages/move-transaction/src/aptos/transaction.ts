@@ -390,13 +390,18 @@ export class AptosTransaction extends BaseProvider {
                     ourGasPrice = estimateGas
                 }
             }
+
+            let ourGasLimit: string | number = AptosUtil.BaseMaxGasAmount
+            if (gasLimit) {
+                ourGasLimit = gasLimit
+            }
             if (transferPayload) {
                 const rawTxn: TxnBuilderTypes.RawTransaction = await AptosUtil.AptosApiRequest.createRawTransaction(
                     client,
                     owner,
                     transferPayload,
                     BigInt(ourGasPrice),
-                    BigInt(gasLimit || AptosUtil.BaseMaxGasAmount),
+                    BigInt(ourGasLimit),
                     AptosUtil.BaseExpireTimestamp
                 )
                 const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, owner, rawTxn)
@@ -409,8 +414,8 @@ export class AptosTransaction extends BaseProvider {
                             from,
                             to,
                             chainId,
-                            gasLimit,
-                            gasPrice,
+                            gasLimit: String(ourGasLimit),
+                            gasPrice: String(ourGasPrice),
                             transactionFee: gas_used,
                             expirationTimestamp: expiration_timestamp_secs,
                             rawData: rawTxn,
@@ -476,10 +481,15 @@ export class AptosTransaction extends BaseProvider {
                     ourGasPrice = estimateGas
                 }
             }
+
+            let ourGasLimit: string | number = AptosUtil.BaseMaxGasAmount
+            if (gasLimit) {
+                ourGasLimit = gasLimit
+            }
             const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateTransaction(owner.address, params, {
                 expiration_timestamp_secs: String(Math.floor(Date.now() / 1e3) + AptosUtil.BaseExpireTimestamp),
                 gas_unit_price: String(ourGasPrice),
-                max_gas_amount: String(gasLimit || AptosUtil.BaseMaxGasAmount),
+                max_gas_amount: String(ourGasLimit),
             })
 
             const simulateTxn: AptosTypes.UserTransaction[] = await AptosUtil.AptosApiRequest.simulateTransaction(client, ourOwner, rawTxn)
@@ -661,9 +671,14 @@ export class AptosTransaction extends BaseProvider {
                 }
             }
 
+            let ourGasLimit: string | number = AptosUtil.BaseMaxGasAmount
+            if (gasLimit) {
+                ourGasLimit = gasLimit
+            }
+
             const rawTxn: TxnBuilderTypes.RawTransaction = await client.generateRawTransaction(new AptosHexString(from.address), payload, {
                 gasUnitPrice: BigInt(ourGasPrice),
-                maxGasAmount: BigInt(gasLimit || AptosUtil.BaseMaxGasAmount),
+                maxGasAmount: BigInt(ourGasLimit),
                 expireTimestamp: BigInt(Math.floor(Date.now() / 1e3) + AptosUtil.BaseExpireTimestamp),
             })
 

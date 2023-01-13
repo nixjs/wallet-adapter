@@ -48,5 +48,5 @@ export abstract class BaseProvider {
     abstract getNativeAssetBalance(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.AssetAmount>>
     abstract getNfts(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.Nft[]>>
     abstract getTransactions(address: PrimitiveHexString, size?: number): Promise<Interfaces.ResponseData<TransactionTypes.Transaction[]>>
-    abstract getERC20MetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>>
+    abstract getTokenMetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>>
 }

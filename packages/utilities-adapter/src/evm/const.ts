@@ -9,7 +9,7 @@ export const BaseGasPrice = 100
 export const BaseMaxGasAmount = 2000
 export const BaseExpireTimestamp = 100 // second
 export const BaseDecimals = 18
-export const BaseIconURL = 'https://raw.githubusercontent.com/nixjs/coin-dapp-wallet-list/main/src/etherum/etherum.svg'
+export const BaseIconURL = 'https://raw.githubusercontent.com/nixjs/coin-dapp-wallet-list/main/src/ethereum/etherum.svg'
 
 export const MainnetNodeURL = 'https://mainnet.infura.io/v3'
 export const GoerliNodeURL = 'https://goerli.infura.io/v3'

@@ -54,8 +54,8 @@ export namespace EvmTypes {
         gasPrice?: string
         maxFeePerGas?: string
         maxPriorityFeePerGas?: string
+        eip1559?: boolean
         gasLimit: string
         estimateFee: string
-        eip1559: boolean
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "@nixjs23n6/utilities-adapter",
-    "version": "2.0.0-alpha.8",
+    "version": "2.0.0-alpha.9",
     "description": "The utilities",
     "sideEffects": false,
     "main": "lib/cjs/index.js",

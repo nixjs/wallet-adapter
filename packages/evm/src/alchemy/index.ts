@@ -64,7 +64,7 @@ export class AlchemyProvider extends BaseProvider {
                 })
                 const results = await Promise.all(requestTasks)
                 results.forEach((r) => {
-                    if (r.data && r.status === 'SUCCESS') {
+                    if (r.data && r.status === 'SUCCESS' && r.data.decimals && r.data.symbol) {
                         const { address, decimals, logoURI, name, symbol } = r.data
                         assets.push({
                             assetId: address,

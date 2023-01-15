@@ -2,7 +2,12 @@ export namespace ProviderEnums {
     export enum Provider {
         APTOS = 'aptos',
         SUI = 'sui',
-        EVM = 'ethereum',
+        ETHEREUM = 'ethereum',
+        // POLYGON = 'polygon',
+        // BSC = 'bsc',
+        // CELO = 'celo',
+        // STARK_NET = 'starknet',
+        // AVELANCHE = 'avelanche',
     }
     export enum Network {
         DEV_NET = 'devnet',

@@ -309,7 +309,7 @@ export class MoralisProvider extends BaseProvider {
             if (response.data && response.data.length > 0) {
                 for (let i = 0; i < response.data.length; i++) {
                     const target = response.data[i]
-                    if (target) {
+                    if (target && target.symbol && target.decimals) {
                         const { address, decimals, name, symbol, thumbnail } = target
                         return {
                             status: 'SUCCESS',

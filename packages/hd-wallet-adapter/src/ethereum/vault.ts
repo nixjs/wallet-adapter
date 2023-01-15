@@ -51,7 +51,7 @@ export class EthereumVault extends BaseProvider {
     }
 
     public get type(): ProviderEnums.Provider {
-        return ProviderEnums.Provider.EVM
+        return ProviderEnums.Provider.ETHEREUM
     }
 
     address(): string {

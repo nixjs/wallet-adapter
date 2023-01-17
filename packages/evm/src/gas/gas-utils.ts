@@ -20,13 +20,26 @@ export namespace EmvGasUtil {
         BUSY: 0.66,
     }
 
+    /**
+     * Get base fee. baseFeePerGas = maxFeePerGas - maxPriorityFeePerGas
+     * @param maxFeePerGas
+     * @param maxPriorityFeePerGas
+     */
     export const getBaseFeePerGas = (maxFeePerGas: string, maxPriorityFeePerGas: string) =>
         BigNumber(maxFeePerGas).minus(maxPriorityFeePerGas).toFixed(0)
 
+    /**
+     * Calculate estimation the network fee
+     * @param gasPrice number
+     * @param gasLimit ether units
+     * @param toWei boolean
+     * @param extraGasForMemo ether units
+     * @returns ether or wei
+     */
     export const calculateFee = (gasPrice: string, gasLimit: string, toWei = false, extraGasForMemo = 0): string => {
         const fee = BigNumber(gasPrice).times(gasLimit).plus(extraGasForMemo)
-        if (toWei) return fee.toFixed(0)
-        return utils.formatUnits(fee.toFixed(0))
+        if (toWei) return utils.parseUnits(fee.toFixed(), 'ether').toString()
+        return fee.toFixed()
     }
 
     export const getSlow = (gasPrice: string): string => {

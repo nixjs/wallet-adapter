@@ -106,25 +106,27 @@ export class EvmTransaction {
     }
 
     getGasCostBySpeed(gasLimit: string, speed: TransactionEnums.GasPriceTypes, gasPrice: BigNumber, baseFee: Types.Nullable<BigNumber>) {
+        const limit = utils.formatUnits(gasLimit, 'gwei') // gwei -> tether
         const params: EvmTypes.GasCost = {
-            gasLimit: Helper.Decimal.toDecimal(utils.formatUnits(gasLimit, 'gwei'), EvmUtil.BaseDecimals),
+            gasLimit: Helper.Decimal.toDecimal(limit, EvmUtil.BaseDecimals),
             eip1559: false,
             estimateFee: '0',
         }
 
         if (baseFee) {
             const _baseFee = baseFee!.toString()
-            params.maxFeePerGas = EmvGasUtil.getBaseFeeBasedOnType(_baseFee, speed).toString()
-            params.maxPriorityFeePerGas = EmvGasUtil.getPriorityFeeBasedOnType(_baseFee, gasPrice.toString(), speed).toString()
-            params.estimateFee = EmvGasUtil.calculateFee(EmvGasUtil.getBaseFeeBasedOnType(_baseFee, speed), gasLimit.toString(), true)
+            let _maxFeePerGas = EmvGasUtil.getBaseFeeBasedOnType(_baseFee, speed).toString()
+            const _maxPriorityFeePerGas = EmvGasUtil.getPriorityFeeBasedOnType(_baseFee, gasPrice.toString(), speed).toString()
+            if (_maxPriorityFeePerGas && BigNumberJs(_maxPriorityFeePerGas).gt(_maxFeePerGas)) {
+                _maxFeePerGas = _maxPriorityFeePerGas
+            }
+            params.maxFeePerGas = _maxFeePerGas
+            params.maxPriorityFeePerGas = _maxPriorityFeePerGas
+            params.estimateFee = EmvGasUtil.calculateFee(EmvGasUtil.getBaseFeeBasedOnType(_baseFee, speed), limit, true)
             params.gasPrice = Helper.Decimal.toDecimal(utils.formatUnits(params.maxFeePerGas), EvmUtil.BaseDecimals)
         } else {
             params.gasPrice = Helper.Decimal.toDecimal(utils.formatUnits(gasPrice), EvmUtil.BaseDecimals)
-            params.estimateFee = EmvGasUtil.calculateFee(
-                EmvGasUtil.getBaseFeeBasedOnType(gasPrice.toString(), speed),
-                gasLimit.toString(),
-                true
-            )
+            params.estimateFee = EmvGasUtil.calculateFee(EmvGasUtil.getBaseFeeBasedOnType(gasPrice.toString(), speed), limit, true)
         }
         return params
     }
@@ -219,6 +221,7 @@ export class EvmTransaction {
 
             const limit = transaction.gasLimit ? utils.formatUnits(transaction.gasLimit, 'gwei') : '0' // gwei -> tether
             const price = gasPrice ? Helper.Decimal.toDecimal(utils.formatUnits(gasPrice), EvmUtil.BaseDecimals) : undefined // wei -> tether
+
             const transactionFee = EmvGasUtil.calculateFee(gasFee, limit, true)
             return {
                 data: {

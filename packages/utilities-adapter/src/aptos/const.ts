@@ -21,7 +21,7 @@ export const DevnetNodeURL = 'https://fullnode.devnet.aptoslabs.com'
 
 export const MainnetChain = '0x1'
 export const TestnetChain = '0x2'
-export const DevnetChain = '0x29'
+export const DevnetChain = '0x2B'
 
 export const BaseNodeInfo: Record<ProviderEnums.Network, string> = {
     [ProviderEnums.Network.MAIN_NET]: MainnetNodeURL,

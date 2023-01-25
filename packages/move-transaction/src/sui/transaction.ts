@@ -165,18 +165,7 @@ export class SUITransaction extends BaseProvider {
             const signedTxnResult = await executeTransaction(provider, owner, rawTxn, 'WaitForLocalExecution')
             if (signedTxnResult.status === 'ERROR' || !signedTxnResult.data) throw signedTxnResult.error
             const { data } = signedTxnResult
-            if (Helper.Validation.hasProperty(data, 'ImmediateReturn') && (data as any)?.ImmediateReturn) {
-                return {
-                    data: (
-                        data as {
-                            ImmediateReturn: {
-                                tx_digest: string
-                            }
-                        }
-                    ).ImmediateReturn.tx_digest,
-                    status: 'SUCCESS',
-                }
-            } else if (Helper.Validation.hasProperty(data, 'TxCert') && (data as any)?.TxCert) {
+            if (Helper.Validation.hasProperty(data, 'TxCert') && (data as any)?.TxCert) {
                 return {
                     data: (
                         data as {
@@ -193,7 +182,6 @@ export class SUITransaction extends BaseProvider {
                         data as {
                             EffectsCert: {
                                 certificate: CertifiedTransaction
-                                effects: SuiCertifiedTransactionEffects
                             }
                         }
                     ).EffectsCert.certificate.transactionDigest,

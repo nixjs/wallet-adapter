@@ -43,7 +43,7 @@
         "@mysten/bcs": "^0.5.0",
         "@mysten/sui.js": "^0.23.0",
         "@nixjs23n6/async-sema": "^0.0.1",
-        "aptos": "^1.6.0",
+        "aptos": "^1.7.2",
         "immer": "^9.0.18"
     },
     "peerDependencies": {

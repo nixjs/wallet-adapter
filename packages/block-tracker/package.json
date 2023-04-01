@@ -40,10 +40,10 @@
         "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
     },
     "dependencies": {
-        "@metamask/safe-event-emitter": "^2.0.1",
+        "@metamask/safe-event-emitter": "^2.0.0",
         "@nixjs23n6/evm": "^2.0.1",
         "@nixjs23n6/utilities-adapter": "^2.0.1",
-        "aptos": "^1.4.0",
+        "aptos": "^1.7.2",
         "axios": ">1.1.0",
         "uuid": "^9.0.0"
     },

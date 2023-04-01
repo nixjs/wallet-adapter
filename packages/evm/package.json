@@ -44,7 +44,7 @@
         "alchemy-sdk": "^2.2.5",
         "axios": ">1.1.0",
         "bignumber.js": "^9.1.0",
-        "ethers": "^5.7.2",
+        "ethers": "^6.2.3",
         "moralis": "^2.10.3"
     }
 }

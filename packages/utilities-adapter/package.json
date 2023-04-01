@@ -42,7 +42,7 @@
         "@nixjs23n6/objectify": ">=0.0.1",
         "@nixjs23n6/types": "^1.0.15",
         "@noble/hashes": "^1.1.5",
-        "aptos": "^1.6.0",
+        "aptos": "^1.7.2",
         "axios": ">1.1.0",
         "bignumber.js": "^9.1.1",
         "tweetnacl": "^1.0.3"

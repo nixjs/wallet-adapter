@@ -9,7 +9,6 @@ import {
     getPaySuiTransaction,
     getPayTransaction,
     getMoveObject,
-    Connection,
 } from '@mysten/sui.js'
 import { RateLimit } from '@nixjs23n6/async-sema'
 import { Coin, Nft } from './object'
@@ -19,8 +18,7 @@ import { TransactionEnums } from '../enums'
 
 export namespace SUIApiRequest {
     export async function getTransactionsForAddress(nodeURL: string, address: PrimitiveHexString): Promise<TransactionTypes.Transaction[]> {
-        const connection = new Connection({ fullnode: nodeURL })
-        const query = new JsonRpcProvider(connection, {
+        const query = new JsonRpcProvider(nodeURL, {
             skipDataValidation: false,
         })
         const txs = await query.getTransactionsForAddress(address)

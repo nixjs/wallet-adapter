@@ -6,6 +6,7 @@ import {
     TokenMetadataResponse,
     AssetTransfersWithMetadataResult,
     AssetTransfersCategory,
+    // eslint-disable-next-line prettier/prettier
     Nft,
 } from 'alchemy-sdk'
 import axios, { AxiosResponse } from 'axios'

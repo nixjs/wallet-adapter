@@ -1,6 +1,6 @@
 {
     "name": "@nixjs23n6/block-tracker",
-    "version": "2.2.2-alpha.0",
+    "version": "2.2.3-alpha.0",
     "description": "A JS module for keeping track of the latest Aptos/SUI/EVM Base block",
     "sideEffects": false,
     "main": "lib/cjs/index.js",
@@ -41,8 +41,8 @@
     },
     "dependencies": {
         "@metamask/safe-event-emitter": "^2.0.0",
-        "@nixjs23n6/evm": "^2.2.2-alpha.0",
-        "@nixjs23n6/utilities-adapter": "^2.2.2-alpha.0",
+        "@nixjs23n6/evm": "^2.2.3-alpha.0",
+        "@nixjs23n6/utilities-adapter": "^2.2.3-alpha.0",
         "aptos": "^1.7.2",
         "axios": ">1.1.0",
         "uuid": "^9.0.0"

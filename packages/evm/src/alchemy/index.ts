@@ -1,14 +1,6 @@
 import { Interfaces, Types } from '@nixjs23n6/types'
 import { AssetTypes, TransactionEnums, TransactionTypes, EvmUtil, Helper, PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
-import {
-    OwnedNftsResponse,
-    TokenBalancesResponse,
-    TokenMetadataResponse,
-    AssetTransfersWithMetadataResult,
-    AssetTransfersCategory,
-    // eslint-disable-next-line prettier/prettier
-    Nft,
-} from 'alchemy-sdk'
+import * as alchemySdk from 'alchemy-sdk'
 import axios, { AxiosResponse } from 'axios'
 import BigNumber from 'bignumber.js'
 import { BaseProvider } from '../base'
@@ -20,7 +12,7 @@ export class AlchemyProvider extends BaseProvider {
         try {
             const assets: AssetTypes.Asset[] = []
 
-            const response = await axios.post<AlchemyResponse<TokenBalancesResponse>>(
+            const response = await axios.post<AlchemyResponse<alchemySdk.TokenBalancesResponse>>(
                 `${this.config.endpoint}/v2/${this.config.apiKey}`,
                 {
                     jsonrpc: '2.0',
@@ -88,7 +80,7 @@ export class AlchemyProvider extends BaseProvider {
         try {
             const amounts: AssetTypes.AssetAmount[] = []
 
-            const response = await axios.post<AlchemyResponse<TokenBalancesResponse>>(
+            const response = await axios.post<AlchemyResponse<alchemySdk.TokenBalancesResponse>>(
                 `${this.config.endpoint}/v2/${this.config.apiKey}`,
                 {
                     jsonrpc: '2.0',
@@ -150,7 +142,7 @@ export class AlchemyProvider extends BaseProvider {
         try {
             const nfts: AssetTypes.Nft[] = []
 
-            const response = await axios.get<OwnedNftsResponse>(
+            const response = await axios.get<alchemySdk.OwnedNftsResponse>(
                 `${this.config.endpoint}/v2/${this.config.apiKey}/getNfts?owner=${address}`,
                 {
                     headers: this.contentType,
@@ -196,7 +188,7 @@ export class AlchemyProvider extends BaseProvider {
             }
 
             const [responses1, responses2] = await Promise.all([
-                axios.post<AlchemyResponse<{ transfers: AssetTransfersWithMetadataResult[] }>>(
+                axios.post<AlchemyResponse<{ transfers: alchemySdk.AssetTransfersWithMetadataResult[] }>>(
                     `${this.config.endpoint}/v2/${this.config.apiKey}`,
                     {
                         jsonrpc: '2.0',
@@ -213,7 +205,7 @@ export class AlchemyProvider extends BaseProvider {
                         headers: this.contentType,
                     }
                 ),
-                axios.post<AlchemyResponse<{ transfers: AssetTransfersWithMetadataResult[] }>>(
+                axios.post<AlchemyResponse<{ transfers: alchemySdk.AssetTransfersWithMetadataResult[] }>>(
                     `${this.config.endpoint}/v2/${this.config.apiKey}`,
                     {
                         jsonrpc: '2.0',
@@ -243,7 +235,7 @@ export class AlchemyProvider extends BaseProvider {
 
     async getTokenMetaData(address: PrimitiveHexString): Promise<Interfaces.ResponseData<EvmTypes.ERC20>> {
         try {
-            const response = await axios.post<AlchemyResponse<TokenMetadataResponse>>(
+            const response = await axios.post<AlchemyResponse<alchemySdk.TokenMetadataResponse>>(
                 `${this.config.endpoint}/v2/${this.config.apiKey}`,
                 {
                     id: new Date().getTime(),
@@ -276,9 +268,13 @@ export class AlchemyProvider extends BaseProvider {
         }
     }
 
-    async getNFTMetaData(address: PrimitiveHexString, tokenId: number, refreshCache = false): Promise<Interfaces.ResponseData<Nft>> {
+    async getNFTMetaData(
+        address: PrimitiveHexString,
+        tokenId: number,
+        refreshCache = false
+    ): Promise<Interfaces.ResponseData<alchemySdk.Nft>> {
         try {
-            const response = await axios.get<Nft>(`${this.config.endpoint}/nft/v2/${this.config.apiKey}`, {
+            const response = await axios.get<alchemySdk.Nft>(`${this.config.endpoint}/nft/v2/${this.config.apiKey}`, {
                 headers: this.contentType,
                 params: {
                     contractAddress: address,
@@ -303,7 +299,7 @@ export class AlchemyProvider extends BaseProvider {
         address: PrimitiveHexString,
         data: AxiosResponse<
             AlchemyResponse<{
-                transfers: AssetTransfersWithMetadataResult[]
+                transfers: alchemySdk.AssetTransfersWithMetadataResult[]
             }>,
             any
         >
@@ -315,7 +311,7 @@ export class AlchemyProvider extends BaseProvider {
                 const { asset, blockNum, category, from, hash, rawContract, to, tokenId, value, metadata } = x
                 let type = TransactionEnums.TransactionType.SCRIPT
                 let txObj: Types.Undefined<TransactionTypes.TransactionObject>
-                if (category === AssetTransfersCategory.EXTERNAL || category === AssetTransfersCategory.INTERNAL) {
+                if (category === alchemySdk.AssetTransfersCategory.EXTERNAL || category === alchemySdk.AssetTransfersCategory.INTERNAL) {
                     type = address === to ? TransactionEnums.TransactionType.RECEIVE : TransactionEnums.TransactionType.SEND
                     txObj = {
                         balance: Helper.Decimal.toDecimal(
@@ -325,7 +321,7 @@ export class AlchemyProvider extends BaseProvider {
                         symbol: asset,
                         type: asset === EvmUtil.CoinSymbol ? 'coin' : 'token',
                     } as TransactionTypes.CoinObject
-                } else if (category === AssetTransfersCategory.ERC20) {
+                } else if (category === alchemySdk.AssetTransfersCategory.ERC20) {
                     if (asset) {
                         type = address === to ? TransactionEnums.TransactionType.RECEIVE : TransactionEnums.TransactionType.SEND
                         txObj = {
@@ -337,7 +333,10 @@ export class AlchemyProvider extends BaseProvider {
                             type: 'token',
                         } as TransactionTypes.CoinObject
                     }
-                } else if (category === AssetTransfersCategory.ERC1155 || category === AssetTransfersCategory.ERC721) {
+                } else if (
+                    category === alchemySdk.AssetTransfersCategory.ERC1155 ||
+                    category === alchemySdk.AssetTransfersCategory.ERC721
+                ) {
                     if (rawContract && rawContract.address && tokenId) {
                         // const nftResult = await this.getNFTMetaData(rawContract.address, Number(tokenId))
                         // if (nftResult.status === 'SUCCESS' && nftResult.data) {

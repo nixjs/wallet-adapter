@@ -26,6 +26,7 @@ export namespace TransactionEnums {
         REGISTER_ASSET,
     }
     export enum TransactionStatus {
+        NONE,
         FAILED,
         SUCCESS,
     }

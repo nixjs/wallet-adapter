@@ -9,7 +9,7 @@ import {
     IError,
     PrimitiveHexString,
 } from '@nixjs23n6/utilities-adapter'
-import { JsonRpcProvider, CertifiedTransaction, SuiCertifiedTransactionEffects, TransactionEffects } from '@mysten/sui.js'
+import { Connection, JsonRpcProvider } from '@mysten/sui.js'
 import { BaseProvider } from '../base'
 import { Provider, executeTransaction } from './api'
 
@@ -123,18 +123,25 @@ export class SUITransaction extends BaseProvider {
         gasPrice?: string
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
         try {
-            const provider = new JsonRpcProvider(SUIUtil.BaseNodeByChainInfo[chainId], {
-                skipDataValidation: true,
+            const provider = new JsonRpcProvider(
+                new Connection({
+                    fullnode: SUIUtil.BaseNodeByChainInfo[chainId],
+                })
+            )
+            const simulateTxn = await provider.dryRunTransactionBlock({
+                transactionBlock: rawTxn.toString(),
             })
-            const simulateTxn: TransactionEffects = await provider.dryRunTransaction(rawTxn.toString())
-            if (simulateTxn && simulateTxn.status.status === 'success') {
+            if (simulateTxn && simulateTxn.effects && simulateTxn.effects.status.status === 'success') {
+                const {
+                    effects: {
+                        gasUsed: { computationCost, storageCost, storageRebate },
+                    },
+                } = simulateTxn
                 return {
                     data: {
                         chainId,
                         from: owner,
-                        transactionFee: String(
-                            simulateTxn.gasUsed.computationCost + simulateTxn.gasUsed.storageCost - simulateTxn.gasUsed.storageRebate
-                        ),
+                        transactionFee: String(Number(computationCost) + Number(storageCost) - Number(storageRebate)),
                         to: '',
                         gasPrice,
                         gasLimit,
@@ -159,32 +166,19 @@ export class SUITransaction extends BaseProvider {
 
     async executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Interfaces.ResponseData<string>> {
         try {
-            const provider = new JsonRpcProvider(SUIUtil.BaseNodeByChainInfo[chainId], {
-                skipDataValidation: true,
-            })
+            const provider = new JsonRpcProvider(
+                new Connection({
+                    fullnode: SUIUtil.BaseNodeByChainInfo[chainId],
+                })
+            )
             const signedTxnResult = await executeTransaction(provider, owner, rawTxn, 'WaitForLocalExecution')
             if (signedTxnResult.status === 'ERROR' || !signedTxnResult.data) throw signedTxnResult.error
-            const { data } = signedTxnResult
-            if (Helper.Validation.hasProperty(data, 'TxCert') && (data as any)?.TxCert) {
+            const {
+                data: { transaction },
+            } = signedTxnResult
+            if (transaction && transaction.txSignatures) {
                 return {
-                    data: (
-                        data as {
-                            TxCert: {
-                                certificate: CertifiedTransaction
-                            }
-                        }
-                    ).TxCert.certificate.transactionDigest,
-                    status: 'SUCCESS',
-                }
-            } else if (Helper.Validation.hasProperty(data, 'EffectsCert') && (data as any)?.EffectsCert) {
-                return {
-                    data: (
-                        data as {
-                            EffectsCert: {
-                                certificate: CertifiedTransaction
-                            }
-                        }
-                    ).EffectsCert.certificate.transactionDigest,
+                    data: transaction.txSignatures[0],
                     status: 'SUCCESS',
                 }
             }
@@ -223,7 +217,7 @@ export class SUITransaction extends BaseProvider {
             const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
             if (!from || !from.publicKeyHex) throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format()
 
-            const result = await provider.transferObject(Nft.id, to, from, Number(gasLimit))
+            const result = await provider.transferObject(Nft.id, from, to, Number(gasLimit))
             if (result.status === 'SUCCESS' && result.data) {
                 const { gasLimit, rawData, transactionFee } = result.data
                 return {
@@ -252,10 +246,12 @@ export class SUITransaction extends BaseProvider {
     }
     async fundAccount(chainId: string, to: string, faucetURL: string): Promise<boolean> {
         try {
-            const provider = new JsonRpcProvider(SUIUtil.BaseNodeByChainInfo[chainId], {
-                skipDataValidation: true,
-                faucetURL,
-            })
+            const provider = new JsonRpcProvider(
+                new Connection({
+                    fullnode: SUIUtil.BaseNodeByChainInfo[chainId],
+                    faucet: faucetURL,
+                })
+            )
             const result = await provider.requestSuiFromFaucet(to)
             if (result.error) return false
             return true

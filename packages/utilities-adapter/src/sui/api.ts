@@ -1,219 +1,75 @@
-import { Types } from '@nixjs23n6/types'
-import {
-    JsonRpcProvider,
-    getTransactionData,
-    getExecutionStatusType,
-    getTransferObjectTransaction,
-    getTransferSuiTransaction,
-    getMoveCallTransaction,
-    getPaySuiTransaction,
-    getPayTransaction,
-    getMoveObject,
-} from '@mysten/sui.js'
-import { RateLimit } from '@nixjs23n6/async-sema'
-import { Coin, Nft } from './object'
+import { JsonRpcProvider, Connection } from '@mysten/sui.js'
 import { TransactionTypes } from '../types'
 import { PrimitiveHexString } from '../HexString'
 import { TransactionEnums } from '../enums'
 
+const dedupe = (arr: string[]) => Array.from(new Set(arr))
+
 export namespace SUIApiRequest {
     export async function getTransactionsForAddress(nodeURL: string, address: PrimitiveHexString): Promise<TransactionTypes.Transaction[]> {
-        const query = new JsonRpcProvider(nodeURL, {
-            skipDataValidation: false,
+        const connection = new Connection({ fullnode: nodeURL })
+        const query = new JsonRpcProvider(connection)
+        const [txnIds, fromTxnIds] = await Promise.all([
+            query.queryTransactionBlocks({
+                filter: {
+                    ToAddress: address!,
+                },
+            }),
+            query.queryTransactionBlocks({
+                filter: {
+                    FromAddress: address!,
+                },
+            }),
+        ])
+        const resp = await query.multiGetTransactionBlocks({
+            digests: dedupe([...txnIds.data, ...fromTxnIds.data].map((x) => x.digest)),
+            options: {
+                showInput: true,
+                showEffects: true,
+                showEvents: true,
+            },
         })
-        const txs = await query.getTransactionsForAddress(address)
-        if (txs.length === 0 || !txs[0]) {
-            return []
-        }
-        const digests = txs.filter((value, index, self) => self.indexOf(value) === index)
-        const effects = await query.getTransactionWithEffectsBatch(digests)
+
         const results = []
 
-        const limit = RateLimit(100) // rps
-        for (const effect of effects) {
-            const data = getTransactionData(effect.certificate)
-            await limit()
-            for (const tx of data.transactions) {
-                const transferSui = getTransferSuiTransaction(tx)
-                const transferObject = getTransferObjectTransaction(tx)
-                const moveCall = getMoveCallTransaction(tx)
-                const paySui = getPaySuiTransaction(tx)
-                const pay = getPayTransaction(tx)
+        const respSorted = resp.sort(
+            // timestamp could be null, so we need to handle
+            (a, b) => Number(b.timestampMs || 0) - Number(a.timestampMs || 0)
+        )
 
-                if (transferSui) {
-                    results.push({
-                        timestamp: effect.timestamp_ms ? Math.floor(effect.timestamp_ms / 1000) : null,
-                        status:
-                            getExecutionStatusType(effect) === 'success'
-                                ? TransactionEnums.TransactionStatus.SUCCESS
-                                : TransactionEnums.TransactionStatus.FAILED,
-                        hash: effect.certificate.transactionDigest,
-                        gasFee:
-                            effect.effects.gasUsed.computationCost +
-                            effect.effects.gasUsed.storageCost -
-                            effect.effects.gasUsed.storageRebate,
-                        from: data.sender,
-                        to: transferSui.recipient,
-                        data: {
-                            type: 'coin',
-                            balance: String(transferSui.amount ? BigInt(transferSui.amount) : BigInt(0)),
-                            symbol: 'SUI',
-                        } as TransactionTypes.CoinObject,
-                        type: address === data.sender ? TransactionEnums.TransactionType.SEND : TransactionEnums.TransactionType.RECEIVE,
-                    })
-                } else if (paySui) {
-                    results.push({
-                        timestamp: effect.timestamp_ms ? Math.floor(effect.timestamp_ms / 1000) : null,
-                        status:
-                            getExecutionStatusType(effect) === 'success'
-                                ? TransactionEnums.TransactionStatus.SUCCESS
-                                : TransactionEnums.TransactionStatus.FAILED,
-                        hash: effect.certificate.transactionDigest,
-                        gasFee:
-                            effect.effects.gasUsed.computationCost +
-                            effect.effects.gasUsed.storageCost -
-                            effect.effects.gasUsed.storageRebate,
-                        from: data.sender,
-                        to: paySui.recipients[0],
-                        data: {
-                            type: 'coin',
-                            symbol: 'SUI',
-                            balance: String(paySui.amounts?.[0] || '0'),
-                        } as TransactionTypes.CoinObject,
-                        type: address === data.sender ? TransactionEnums.TransactionType.SEND : TransactionEnums.TransactionType.RECEIVE,
-                    })
-                } else if (pay) {
-                    for (const coin of pay.coins) {
-                        const resp = await query.getObject(coin.objectId)
-                        if (resp && resp.status === 'Exists') {
-                            const obj = getMoveObject(resp)
-                            let txObj: Types.Undefined<TransactionTypes.TransactionObject>
-                            if (obj && Coin.isCoin(obj)) {
-                                const coinObj = Coin.getCoinObject(obj)
-                                txObj = {
-                                    type: 'coin',
-                                    symbol: coinObj.symbol,
-                                    balance: String(coinObj.balance),
-                                } as TransactionTypes.CoinObject
-                            } else if (obj && Nft.isNft(obj)) {
-                                const nftObject = Nft.getNftObject(obj, undefined)
-                                txObj = {
-                                    type: 'nft',
-                                    name: nftObject.name || coin.objectId,
-                                    description: nftObject.description,
-                                    url: nftObject.url,
-                                } as TransactionTypes.NftObject
-                            }
-                            if (txObj) {
-                                results.push({
-                                    timestamp: effect.timestamp_ms ? Math.floor(effect.timestamp_ms / 1000) : null,
-                                    status:
-                                        getExecutionStatusType(effect) === 'success'
-                                            ? TransactionEnums.TransactionStatus.SUCCESS
-                                            : TransactionEnums.TransactionStatus.FAILED,
-                                    hash: effect.certificate.transactionDigest,
-                                    gasFee:
-                                        effect.effects.gasUsed.computationCost +
-                                        effect.effects.gasUsed.storageCost -
-                                        effect.effects.gasUsed.storageRebate,
-                                    from: data.sender,
-                                    to: pay.recipients[0],
-                                    data: txObj,
-                                    type:
-                                        address === data.sender
-                                            ? TransactionEnums.TransactionType.SEND
-                                            : TransactionEnums.TransactionType.RECEIVE,
-                                })
-                            }
-                        }
-                    }
-                } else if (transferObject) {
-                    const resp = await query.getObject(transferObject.objectRef.objectId)
-                    if (resp.status === 'Exists') {
-                        const obj = getMoveObject(resp)
-                        let txObj: Types.Undefined<TransactionTypes.TransactionObject>
-                        // TODO: for now provider does not support to get histrorical object data,
-                        // so the record here may not be accurate.
-                        if (obj && Coin.isCoin(obj)) {
-                            const coinObj = Coin.getCoinObject(obj)
-                            txObj = {
-                                type: 'coin',
-                                symbol: coinObj.symbol,
-                                balance: String(coinObj.balance),
-                            }
-                        } else if (obj && Nft.isNft(obj)) {
-                            const nftObject = Nft.getNftObject(obj, undefined)
-                            txObj = {
-                                type: 'nft',
-                                name: nftObject.name || transferObject.objectRef.objectId,
-                                description: nftObject.description,
-                                url: nftObject.url,
-                            } as TransactionTypes.NftObject
-                        }
-
-                        // TODO: handle more object types
-                        if (txObj) {
-                            results.push({
-                                timestamp: effect.timestamp_ms ? Math.floor(effect.timestamp_ms / 1000) : null,
-                                status:
-                                    getExecutionStatusType(effect) === 'success'
-                                        ? TransactionEnums.TransactionStatus.SUCCESS
-                                        : TransactionEnums.TransactionStatus.FAILED,
-                                hash: effect.certificate.transactionDigest,
-                                gasFee:
-                                    effect.effects.gasUsed.computationCost +
-                                    effect.effects.gasUsed.storageCost -
-                                    effect.effects.gasUsed.storageRebate,
-                                from: data.sender,
-                                to: transferObject.recipient,
-                                data: txObj,
-                                type:
-                                    address === data.sender
-                                        ? TransactionEnums.TransactionType.SEND
-                                        : TransactionEnums.TransactionType.RECEIVE,
-                            })
-                        }
-                    }
-                } else if (moveCall) {
-                    let txObj: Types.Undefined<TransactionTypes.TransactionObject>
-                    if (moveCall.function === 'mint' && moveCall.arguments && moveCall.arguments?.length > 0) {
-                        txObj = {
-                            type: 'nft',
-                            name: moveCall.arguments[0],
-                            description: moveCall.arguments[1],
-                            url: moveCall.arguments[2],
-                        } as TransactionTypes.NftObject
-                    } else
-                        txObj = {
-                            type: 'move_call',
-                            packageObjectId: moveCall.package.objectId,
-                            module: moveCall.module,
-                            function: moveCall.function,
-                            arguments: moveCall.arguments?.map((arg) => JSON.stringify(arg)),
-                            created: [],
-                            mutated: [],
-                            overview: moveCall.function || 'Unknown',
-                        } as TransactionTypes.ScriptObject
-                    results.push({
-                        timestamp: effect.timestamp_ms ? Math.floor(effect.timestamp_ms / 1000) : null,
-                        status:
-                            getExecutionStatusType(effect) === 'success'
-                                ? TransactionEnums.TransactionStatus.SUCCESS
-                                : TransactionEnums.TransactionStatus.FAILED,
-                        hash: effect.certificate.transactionDigest,
-                        gasFee:
-                            effect.effects.gasUsed.computationCost +
-                            effect.effects.gasUsed.storageCost -
-                            effect.effects.gasUsed.storageRebate,
-                        from: data.sender,
-                        to: moveCall.package.objectId,
-                        data: txObj,
-                        type:
-                            moveCall.function === 'mint' ? TransactionEnums.TransactionType.MINT : TransactionEnums.TransactionType.SCRIPT,
-                    })
+        for (let i = 0; i < respSorted.length; i++) {
+            const { digest, transaction, timestampMs, effects } = respSorted[i]
+            if (transaction) {
+                const {
+                    data: { sender },
+                } = transaction
+                let ourStatus = TransactionEnums.TransactionStatus.NONE
+                let ourGasFee = 0
+                if (effects) {
+                    const {
+                        status,
+                        gasUsed: { computationCost, storageCost, storageRebate },
+                    } = effects
+                    ourStatus =
+                        status.status === 'success' ? TransactionEnums.TransactionStatus.SUCCESS : TransactionEnums.TransactionStatus.FAILED
+                    ourGasFee = Number(computationCost) + Number(storageCost) - Number(storageRebate)
                 }
+                results.push({
+                    timestamp: timestampMs ? Math.floor(Number(timestampMs) / 1000) : null,
+                    status: ourStatus,
+                    hash: digest,
+                    gasFee: ourGasFee,
+                    from: sender,
+                    to: '',
+                    data: {
+                        overview: digest,
+                        transaction,
+                    } as TransactionTypes.ScriptObject,
+                    type: address === sender ? TransactionEnums.TransactionType.SEND : TransactionEnums.TransactionType.RECEIVE,
+                })
             }
         }
+
         return results
     }
 }

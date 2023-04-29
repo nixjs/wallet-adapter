@@ -1,7 +1,9 @@
 import nacl from 'tweetnacl'
-import { sha3_256 as sha3Hash } from '@noble/hashes/sha3'
 import { HexString } from '@nixjs23n6/utilities-adapter'
-import * as hmac from 'js-crypto-hmac'
+import { hmac } from '@noble/hashes/hmac'
+import { sha512 } from '@noble/hashes/sha512'
+import * as hmacc from 'js-crypto-hmac'
+// import { fromHEX } from '@mysten/bcs'
 import { Buffer } from 'buffer'
 
 export class Ed25519HdKey {
@@ -20,15 +22,17 @@ export class Ed25519HdKey {
     }
 
     public static async fromMasterSeed(seed: Buffer): Promise<Ed25519HdKey> {
-        const key = await hmac.compute(Buffer.from(Ed25519HdKey.MASTER_SECRET), seed, 'SHA-512')
-        return new Ed25519HdKey(Buffer.from(key.slice(0, 32)), Buffer.from(key.slice(32)))
+        // const key = await hmac.compute(Buffer.from(Ed25519HdKey.MASTER_SECRET), seed, 'SHA-512')
+        const key = hmac.create(sha512, Ed25519HdKey.MASTER_SECRET)
+        const I = key.update(seed).digest()
+        return new Ed25519HdKey(Buffer.from(I.slice(0, 32)), Buffer.from(I.slice(32)))
     }
 
     public getAddress(): string {
         const bytes = new Uint8Array(this.keyPair.publicKey.length + 1)
         bytes.set([Ed25519HdKey.ED25519_SCHEME])
         bytes.set(this.keyPair.publicKey, 1)
-        const hash = sha3Hash.create()
+        const hash = sha512.create()
         hash.update(bytes)
         return HexString.fromUint8Array(hash.digest().slice(0, 20)).hex()
     }
@@ -58,10 +62,6 @@ export class Ed25519HdKey {
         const toSign = HexString.ensure(message).toUint8Array()
         return this.signBuffer(toSign)
     }
-
-    // public verify(digest: Buffer, signature: Buffer): boolean {
-    //     return this.keyPair.verify(digest, signature)
-    // }
 
     public async derive(path: string): Promise<Ed25519HdKey> {
         if (!/^[mM]'?/.test(path)) {
@@ -98,7 +98,7 @@ export class Ed25519HdKey {
         data.fill(this.keyPair.secretKey, 1, 33)
         data.fill(ser32(index), 33, 37)
 
-        const key = await hmac.compute(this.chainCode, data, 'SHA-512')
+        const key = await hmacc.compute(this.chainCode, data, 'SHA-512')
         return new Ed25519HdKey(Buffer.from(key.slice(0, 32)), Buffer.from(key.slice(32)))
     }
 }

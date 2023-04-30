@@ -1,16 +1,8 @@
 {
     "extends": "../../tsconfig.json",
-    "include": [
-        "src"
-    ],
+    "include": ["src"],
     "compilerOptions": {
-        "lib": [
-            "ES2017",
-            "ES6",
-            "DOM",
-            "DOM.Iterable",
-            "ESNext.AsyncIterable"
-        ],
+        "lib": ["ES2017", "ES6", "DOM", "DOM.Iterable", "ESNext.AsyncIterable"],
         "outDir": "./lib",
         "rootDir": "./src"
     }

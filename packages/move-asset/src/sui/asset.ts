@@ -133,12 +133,11 @@ export class SUIAsset extends BaseProvider {
                 )
                 const objects = await provider.getOwnedObjects({
                     owner: address,
+                    options: { showType: true, showDisplay: true },
                 })
                 if (!objects || !objects.data || objects.data.length === 0) return []
-                const ourObjects = objects.data.filter(({ data }) => typeof data === 'object' && 'display' in data && data.display)
-
-                for (let i = 0; i < ourObjects.length; i++) {
-                    const target = ourObjects[i]
+                for (let i = 0; i < objects.data.length; i++) {
+                    const target = objects.data[i]
                     if (target.data) {
                         const display = getObjectDisplay(target)
                         if (display && display.data) {

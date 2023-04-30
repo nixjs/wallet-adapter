@@ -1,6 +1,6 @@
 {
     "name": "@nixjs23n6/move-asset",
-    "version": "2.2.11-alpha.0",
+    "version": "2.2.12-alpha.0",
     "description": "Assets",
     "sideEffects": false,
     "main": "lib/cjs/index.js",
@@ -47,12 +47,12 @@
     "peerDependencies": {
         "@mysten/sui.js": "^0.32.2",
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^2.2.11-alpha.0"
+        "@nixjs23n6/utilities-adapter": "^2.2.12-alpha.0"
     },
     "devDependencies": {
         "@mysten/sui.js": "^0.32.2",
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^2.2.11-alpha.0",
+        "@nixjs23n6/utilities-adapter": "^2.2.12-alpha.0",
         "@types/lodash-es": "^4.17.6",
         "lodash-es": "^4.17.21"
     }

@@ -4,7 +4,6 @@ import { PrimitiveHexString } from '../HexString'
 import { TransactionEnums } from '../enums'
 
 const dedupe = (arr: string[]) => Array.from(new Set(arr))
-
 export namespace SUIApiRequest {
     export async function getTransactionsForAddress(nodeURL: string, address: PrimitiveHexString): Promise<TransactionTypes.Transaction[]> {
         const connection = new Connection({ fullnode: nodeURL })
@@ -27,6 +26,7 @@ export namespace SUIApiRequest {
                 showInput: true,
                 showEffects: true,
                 showEvents: true,
+                showBalanceChanges: true,
             },
         })
 
@@ -36,15 +36,25 @@ export namespace SUIApiRequest {
             // timestamp could be null, so we need to handle
             (a, b) => Number(b.timestampMs || 0) - Number(a.timestampMs || 0)
         )
-
         for (let i = 0; i < respSorted.length; i++) {
-            const { digest, transaction, timestampMs, effects } = respSorted[i]
+            const { digest, transaction, timestampMs, effects, balanceChanges } = respSorted[i]
             if (transaction) {
                 const {
                     data: { sender },
                 } = transaction
                 let ourStatus = TransactionEnums.TransactionStatus.NONE
                 let ourGasFee = 0
+                const ourBalanceChanges = balanceChanges
+                    ? balanceChanges.map(({ owner }) => {
+                          return owner === 'Immutable'
+                              ? 'Immutable'
+                              : 'AddressOwner' in owner
+                              ? owner.AddressOwner
+                              : 'ObjectOwner' in owner
+                              ? owner.ObjectOwner
+                              : ''
+                      })
+                    : []
                 if (effects) {
                     const {
                         status,
@@ -60,7 +70,7 @@ export namespace SUIApiRequest {
                     hash: digest,
                     gasFee: ourGasFee,
                     from: sender,
-                    to: '',
+                    to: ourBalanceChanges[0] === sender ? ourBalanceChanges[1] : ourBalanceChanges[0],
                     data: {
                         overview: digest,
                         transaction,

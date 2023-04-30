@@ -5,9 +5,13 @@
     ],
     "compilerOptions": {
         "lib": [
-            "ES2017"
+            "ES2017",
+            "ES6",
+            "DOM",
+            "DOM.Iterable",
+            "ESNext.AsyncIterable"
         ],
         "outDir": "./lib",
-        "rootDir": "./src",
+        "rootDir": "./src"
     }
 }

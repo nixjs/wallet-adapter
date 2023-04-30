@@ -1,6 +1,6 @@
 {
     "name": "@nixjs23n6/evm",
-    "version": "2.2.10-alpha.0",
+    "version": "2.2.11-alpha.0",
     "description": "Evm utilities",
     "sideEffects": false,
     "main": "lib/cjs/index.js",
@@ -38,9 +38,9 @@
         "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
     },
     "dependencies": {
-        "@nixjs23n6/move-transaction": "^2.2.10-alpha.0",
+        "@nixjs23n6/move-transaction": "^2.2.11-alpha.0",
         "@nixjs23n6/types": "^1.0.15",
-        "@nixjs23n6/utilities-adapter": "^2.2.10-alpha.0",
+        "@nixjs23n6/utilities-adapter": "^2.2.11-alpha.0",
         "alchemy-sdk": "^2.8.0",
         "axios": ">1.1.0",
         "bignumber.js": "^9.1.0",

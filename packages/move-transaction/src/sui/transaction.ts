@@ -1,14 +1,5 @@
 import { Types, Interfaces } from '@nixjs23n6/types'
-import {
-    TransactionTypes,
-    ProviderEnums,
-    SUIUtil,
-    AssetTypes,
-    VaultTypes,
-    Helper,
-    IError,
-    PrimitiveHexString,
-} from '@nixjs23n6/utilities-adapter'
+import { TransactionTypes, ProviderEnums, SUIUtil, AssetTypes, VaultTypes, IError, PrimitiveHexString } from '@nixjs23n6/utilities-adapter'
 import { Connection, JsonRpcProvider, TransactionBlock } from '@mysten/sui.js'
 import { BaseProvider } from '../base'
 import { Provider, executeTransaction } from './api'
@@ -45,7 +36,9 @@ export class SUITransaction extends BaseProvider {
         chainId: string,
         asset: AssetTypes.Asset,
         owner: VaultTypes.AccountObject
-    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction>> {
+    ): Promise<
+        Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RegisterAssetTransaction & { message: string }>
+    > {
         return {
             data: {
                 type: 'none',
@@ -56,6 +49,7 @@ export class SUITransaction extends BaseProvider {
                 from: owner,
                 to: '',
                 transactionFee: '',
+                message: 'The method is unavailable',
             },
             status: 'SUCCESS',
         }
@@ -66,14 +60,13 @@ export class SUITransaction extends BaseProvider {
         asset: AssetTypes.Asset,
         from: VaultTypes.AccountObject,
         to: string,
-        chainId: string,
-        gasLimit?: string | undefined,
-        gasPrice?: string | undefined
+        chainId: string
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction & TransactionTypes.RawTransferTransaction>> {
         try {
             const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
             if (from && from.publicKeyHex) {
                 const result = await provider.transferCoin(asset.assetId, Number(amount), from, to, asset.decimals)
+                const gasPrice = await provider.provider.getReferenceGasPrice()
                 if (result.status === 'SUCCESS' && result.data) {
                     const { gasLimit, rawData, transactionFee } = result.data
                     return {
@@ -84,7 +77,7 @@ export class SUITransaction extends BaseProvider {
                             to,
                             chainId,
                             gasLimit,
-                            gasPrice,
+                            gasPrice: gasPrice.toString(),
                             transactionFee,
                             rawData,
                             transactionType: 'transfer',
@@ -115,11 +108,9 @@ export class SUITransaction extends BaseProvider {
 
     async simulateTransaction(
         chainId: string,
-        rawTxn: string,
+        rawTxn: string | Uint8Array,
         owner: VaultTypes.AccountObject,
-        type: 'transfer' | 'script',
-        gasLimit?: string,
-        gasPrice?: string
+        type: 'transfer' | 'script'
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
         try {
             const provider = new JsonRpcProvider(
@@ -131,6 +122,7 @@ export class SUITransaction extends BaseProvider {
             const simulateTxn = await provider.dryRunTransactionBlock({
                 transactionBlock: await tx.build({ provider }),
             })
+            const gasPrice = await provider.getReferenceGasPrice()
             if (simulateTxn && simulateTxn.effects && simulateTxn.effects.status.status === 'success') {
                 const {
                     effects: {
@@ -143,8 +135,8 @@ export class SUITransaction extends BaseProvider {
                         from: owner,
                         transactionFee: String(Number(computationCost) + Number(storageCost) - Number(storageRebate)),
                         to: '',
-                        gasPrice,
-                        gasLimit,
+                        gasPrice: gasPrice.toString(),
+                        gasLimit: tx.blockData.gasConfig.budget || '0',
                         rawData: rawTxn,
                         transactionType: type,
                     },
@@ -164,7 +156,11 @@ export class SUITransaction extends BaseProvider {
         }
     }
 
-    async executeTransaction(chainId: string, rawTxn: string, owner: VaultTypes.AccountObject): Promise<Interfaces.ResponseData<string>> {
+    async executeTransaction(
+        chainId: string,
+        rawTxn: string | Uint8Array,
+        owner: VaultTypes.AccountObject
+    ): Promise<Interfaces.ResponseData<string>> {
         try {
             const provider = new JsonRpcProvider(
                 new Connection({
@@ -172,7 +168,6 @@ export class SUITransaction extends BaseProvider {
                 })
             )
             const tx = new TransactionBlock(TransactionBlock.from(rawTxn))
-            console.log('tx', tx)
             const signedTxnResult = await executeTransaction(provider, owner, tx, 'WaitForLocalExecution')
             if (signedTxnResult.status === 'ERROR' || !signedTxnResult.data) throw signedTxnResult.error
             const {
@@ -190,14 +185,10 @@ export class SUITransaction extends BaseProvider {
         }
     }
 
-    async checkReceiveNFTStatus(chainId: string, address: PrimitiveHexString): Promise<boolean> {
+    async checkReceiveNFTStatus(): Promise<boolean> {
         return true
     }
-    async allowReceiveNFT(
-        chainId: string,
-        owner: VaultTypes.AccountObject,
-        allow: boolean
-    ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
+    async allowReceiveNFT(): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any>>> {
         return {
             status: 'SUCCESS',
         }
@@ -207,15 +198,14 @@ export class SUITransaction extends BaseProvider {
         Nft: AssetTypes.Nft,
         amount: string,
         from: VaultTypes.AccountObject,
-        to: string,
-        gasLimit?: string | undefined,
-        gasPrice?: string | undefined
+        to: string
     ): Promise<Interfaces.ResponseData<TransactionTypes.SimulateTransaction<any> & TransactionTypes.RawTransferNFTTransaction>> {
         try {
             const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
             if (!from || !from.publicKeyHex) throw IError.ErrorConfigs[IError.ERROR_TYPE.INVALID_PARAMETERS].format()
 
-            const result = await provider.transferObject(Nft.id, from, to, Number(gasLimit))
+            const result = await provider.transferObject(Nft.id, from, to)
+            const gasPrice = await provider.provider.getReferenceGasPrice()
             if (result.status === 'SUCCESS' && result.data) {
                 const { gasLimit, rawData, transactionFee } = result.data
                 return {
@@ -226,7 +216,7 @@ export class SUITransaction extends BaseProvider {
                         to,
                         chainId,
                         gasLimit,
-                        gasPrice,
+                        gasPrice: gasPrice.toString(),
                         transactionFee,
                         rawData,
                         transactionType: 'transfer-nft',

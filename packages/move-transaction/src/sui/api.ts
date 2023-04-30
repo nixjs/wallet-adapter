@@ -132,8 +132,7 @@ export class Provider {
     async transferObject(
         objectId: string,
         from: VaultTypes.AccountObject,
-        to: string,
-        gasLimit?: number
+        to: string
     ): Promise<
         Interfaces.ResponseData<{
             rawData: string
@@ -201,6 +200,7 @@ export async function executeTransaction(
         const txn = await signer.signAndExecuteTransactionBlock({
             transactionBlock: data,
             requestType,
+            options,
         })
         return {
             data: txn,

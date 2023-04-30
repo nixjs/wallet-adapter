@@ -74,7 +74,7 @@ export class SUITransaction extends BaseProvider {
             const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
             if (from && from.publicKeyHex) {
                 const ourAmount = Helper.Decimal.toDecimal(amount, asset.decimals)
-                const result = await provider.transferCoin(asset.symbol, Number(ourAmount), from, to)
+                const result = await provider.transferCoin(asset.assetId, Number(ourAmount), from, to)
                 if (result.status === 'SUCCESS' && result.data) {
                     const { gasLimit, rawData, transactionFee } = result.data
                     return {

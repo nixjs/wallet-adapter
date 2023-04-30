@@ -9,7 +9,7 @@ import {
     IError,
     PrimitiveHexString,
 } from '@nixjs23n6/utilities-adapter'
-import { Connection, JsonRpcProvider } from '@mysten/sui.js'
+import { Connection, JsonRpcProvider, TransactionBlock } from '@mysten/sui.js'
 import { BaseProvider } from '../base'
 import { Provider, executeTransaction } from './api'
 
@@ -73,8 +73,7 @@ export class SUITransaction extends BaseProvider {
         try {
             const provider = new Provider(SUIUtil.BaseNodeByChainInfo[chainId])
             if (from && from.publicKeyHex) {
-                const ourAmount = Helper.Decimal.toDecimal(amount, asset.decimals)
-                const result = await provider.transferCoin(asset.assetId, Number(ourAmount), from, to)
+                const result = await provider.transferCoin(asset.assetId, Number(amount), from, to, asset.decimals)
                 if (result.status === 'SUCCESS' && result.data) {
                     const { gasLimit, rawData, transactionFee } = result.data
                     return {
@@ -116,7 +115,7 @@ export class SUITransaction extends BaseProvider {
 
     async simulateTransaction(
         chainId: string,
-        rawTxn: any,
+        rawTxn: string,
         owner: VaultTypes.AccountObject,
         type: 'transfer' | 'script',
         gasLimit?: string,
@@ -128,8 +127,9 @@ export class SUITransaction extends BaseProvider {
                     fullnode: SUIUtil.BaseNodeByChainInfo[chainId],
                 })
             )
+            const tx = new TransactionBlock(TransactionBlock.from(rawTxn))
             const simulateTxn = await provider.dryRunTransactionBlock({
-                transactionBlock: rawTxn.toString(),
+                transactionBlock: await tx.build({ provider }),
             })
             if (simulateTxn && simulateTxn.effects && simulateTxn.effects.status.status === 'success') {
                 const {
@@ -164,27 +164,25 @@ export class SUITransaction extends BaseProvider {
         }
     }
 
-    async executeTransaction(chainId: string, rawTxn: any, owner: VaultTypes.AccountObject): Promise<Interfaces.ResponseData<string>> {
+    async executeTransaction(chainId: string, rawTxn: string, owner: VaultTypes.AccountObject): Promise<Interfaces.ResponseData<string>> {
         try {
             const provider = new JsonRpcProvider(
                 new Connection({
                     fullnode: SUIUtil.BaseNodeByChainInfo[chainId],
                 })
             )
-            const signedTxnResult = await executeTransaction(provider, owner, rawTxn, 'WaitForLocalExecution')
+            const tx = new TransactionBlock(TransactionBlock.from(rawTxn))
+            console.log('tx', tx)
+            const signedTxnResult = await executeTransaction(provider, owner, tx, 'WaitForLocalExecution')
             if (signedTxnResult.status === 'ERROR' || !signedTxnResult.data) throw signedTxnResult.error
             const {
-                data: { transaction },
+                data: { digest },
             } = signedTxnResult
-            if (transaction && transaction.txSignatures) {
-                return {
-                    data: transaction.txSignatures[0],
-                    status: 'SUCCESS',
-                }
+            return {
+                data: digest,
+                status: 'SUCCESS',
             }
-            throw IError.ErrorConfigs[IError.ERROR_TYPE.DATA_NOT_FOUND].format()
         } catch (error) {
-            console.log('[executeTransaction]', error)
             return {
                 error,
                 status: 'ERROR',

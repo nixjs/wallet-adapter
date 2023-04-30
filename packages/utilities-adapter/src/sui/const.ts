@@ -1,8 +1,9 @@
 import { Types } from '@nixjs23n6/types'
+import { SUI_TYPE_ARG } from '@mysten/sui.js'
 import { ProviderEnums } from '../enums'
 import { NetworkTypes } from '../types'
 
-export const SUICoinStore = '0x2::coin::Coin<0x2::sui::SUI>'
+export const SUICoinStore = SUI_TYPE_ARG
 export const BaseCoinType = '0x2::coin::Coin'
 export const BaseCoinTypeRegex = /^0x2::coin::Coin<(.+)>$/
 export const BaseMaxGasAmount = 150

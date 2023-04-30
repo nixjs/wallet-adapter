@@ -32,10 +32,11 @@ export class Provider {
         amount: number,
         from: VaultTypes.AccountObject,
         to: string,
-        decimals?: number
+        decimals?: number,
+        isPayAllSui?: boolean
     ): Promise<
         Interfaces.ResponseData<{
-            rawData: TransactionBlock
+            rawData: string
             gasLimit: string
             transactionFee: string
         }>
@@ -51,8 +52,9 @@ export class Provider {
         }
 
         const tx = new TransactionBlock()
+        tx.setSenderIfNotSet(from.address)
 
-        if (coinType === SUI_TYPE_ARG) {
+        if (isPayAllSui && coinType === SUI_TYPE_ARG) {
             tx.transferObjects([tx.gas], tx.pure(to))
             tx.setGasPayment(
                 coins
@@ -69,14 +71,14 @@ export class Provider {
                     gasUsed: { computationCost, storageCost, storageRebate },
                 },
             } = await this.provider.dryRunTransactionBlock({
-                transactionBlock: tx.serialize(),
+                transactionBlock: await tx.build({ provider: this.provider }),
             })
             return {
                 status: 'SUCCESS',
                 data: {
-                    rawData: tx,
+                    rawData: tx.serialize(),
                     transactionFee: String(Number(computationCost) + Number(storageCost) - Number(storageRebate)),
-                    gasLimit: '-1',
+                    gasLimit: tx.blockData.gasConfig.budget || '0',
                 },
             }
         }
@@ -115,14 +117,14 @@ export class Provider {
                 gasUsed: { computationCost, storageCost, storageRebate },
             },
         } = await this.provider.dryRunTransactionBlock({
-            transactionBlock: tx.serialize(),
+            transactionBlock: await tx.build({ provider: this.provider }),
         })
         return {
             status: 'SUCCESS',
             data: {
-                rawData: tx,
+                rawData: tx.serialize(),
                 transactionFee: String(Number(computationCost) + Number(storageCost) - Number(storageRebate)),
-                gasLimit: '-1',
+                gasLimit: tx.blockData.gasConfig.budget || '0',
             },
         }
     }
@@ -134,7 +136,7 @@ export class Provider {
         gasLimit?: number
     ): Promise<
         Interfaces.ResponseData<{
-            rawData: TransactionBlock
+            rawData: string
             gasLimit: string
             transactionFee: string
         }>
@@ -149,32 +151,26 @@ export class Provider {
             throw new Error('No object to transfer')
         }
         const tx = new TransactionBlock()
+        tx.setSenderIfNotSet(from.address)
         tx.transferObjects([tx.object(objectId)], tx.pure(to))
         const {
             effects: {
                 gasUsed: { computationCost, storageCost, storageRebate },
             },
         } = await this.provider.dryRunTransactionBlock({
-            transactionBlock: tx.serialize(),
+            transactionBlock: await tx.build({ provider: this.provider }),
         })
         return {
             status: 'SUCCESS',
             data: {
-                rawData: tx,
+                rawData: tx.serialize(),
                 transactionFee: String(Number(computationCost) + Number(storageCost) - Number(storageRebate)),
-                gasLimit: '-1',
+                gasLimit: tx.blockData.gasConfig.budget || '0',
             },
         }
     }
 }
 
-export const DEFAULT_GAS_BUDGET_FOR_SPLIT = 2000
-export const DEFAULT_GAS_BUDGET_FOR_MERGE = 1000
-export const DEFAULT_GAS_BUDGET_FOR_TRANSFER = 100
-export const DEFAULT_GAS_BUDGET_FOR_TRANSFER_SUI = 100
-export const DEFAULT_GAS_BUDGET_FOR_STAKE = 1000
-export const GAS_SYMBOL = 'SUI'
-export const DEFAULT_NFT_TRANSFER_GAS_FEE = 450
 export const MINT_EXAMPLE_NFT_MOVE_CALL = {
     packageObjectId: '0x2',
     module: 'devnet_nft',
@@ -211,7 +207,6 @@ export async function executeTransaction(
             status: 'SUCCESS',
         }
     } catch (error) {
-        console.log('[executeTransaction]', error)
         return {
             error,
             status: 'ERROR',

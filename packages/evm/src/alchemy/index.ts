@@ -7,7 +7,7 @@ import { BaseProvider } from '../base'
 import { EvmTypes } from '../types'
 import { AlchemyResponse } from './types'
 
-export default class AlchemyProvider extends BaseProvider {
+export class AlchemyProvider extends BaseProvider {
     async getAssets(address: PrimitiveHexString): Promise<Interfaces.ResponseData<AssetTypes.Asset[]>> {
         try {
             const assets: AssetTypes.Asset[] = []

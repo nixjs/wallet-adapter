@@ -1,10 +1,24 @@
 import nacl from 'tweetnacl'
-import { HexString } from '@nixjs23n6/utilities-adapter'
+import { blake2b } from '@noble/hashes/blake2b'
+import { bytesToHex } from '@noble/hashes/utils'
 import { hmac } from '@noble/hashes/hmac'
 import { sha512 } from '@noble/hashes/sha512'
 import * as hmacc from 'js-crypto-hmac'
-// import { fromHEX } from '@mysten/bcs'
 import { Buffer } from 'buffer'
+import { HexString } from '@nixjs23n6/utilities-adapter'
+
+export const SIGNATURE_SCHEME_TO_FLAG = {
+    ED25519: 0x00,
+    Secp256k1: 0x01,
+}
+
+export function normalizeSuiAddress(value: string, forceAdd0x = false): string {
+    let address = value.toLowerCase()
+    if (!forceAdd0x && address.startsWith('0x')) {
+        address = address.slice(2)
+    }
+    return `0x${address.padStart(64, '0')}`
+}
 
 export class Ed25519HdKey {
     keyPair: nacl.SignKeyPair
@@ -29,12 +43,10 @@ export class Ed25519HdKey {
     }
 
     public getAddress(): string {
-        const bytes = new Uint8Array(this.keyPair.publicKey.length + 1)
-        bytes.set([Ed25519HdKey.ED25519_SCHEME])
-        bytes.set(this.keyPair.publicKey, 1)
-        const hash = sha512.create()
-        hash.update(bytes)
-        return HexString.fromUint8Array(hash.digest().slice(0, 20)).hex()
+        const tmp = new Uint8Array(33)
+        tmp.set([SIGNATURE_SCHEME_TO_FLAG['ED25519']])
+        tmp.set(this.getPublicKey(), 1)
+        return normalizeSuiAddress(bytesToHex(blake2b(tmp, { dkLen: 32 })).slice(0, 64))
     }
 
     public getPublicKey(): Uint8Array {

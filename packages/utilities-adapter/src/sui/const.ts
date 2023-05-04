@@ -38,6 +38,7 @@ export const Networks: Types.Object<NetworkTypes.Network> = {
         nodeURL: MainnetNodeURL,
         explorerURL: 'https://explorer.sui.io',
         nativeToken: 'SUI',
+        active: true,
         type: ProviderEnums.Network.MAIN_NET,
     },
     [TestnetChain]: {

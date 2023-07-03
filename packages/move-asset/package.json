@@ -41,7 +41,7 @@
     "dependencies": {
         "@mysten/sui.js": "^0.32.2",
         "@nixjs23n6/async-sema": "^0.0.1",
-        "aptos": "^1.7.2",
+        "aptos": "^1.12.0",
         "axios": ">1.1.0"
     },
     "peerDependencies": {

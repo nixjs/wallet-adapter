@@ -43,7 +43,7 @@
         "@metamask/safe-event-emitter": "^2.0.0",
         "@nixjs23n6/evm": "^2.2.13-alpha.0",
         "@nixjs23n6/utilities-adapter": "^2.2.13-alpha.0",
-        "aptos": "^1.7.2",
+        "aptos": "^1.12.0",
         "axios": ">1.1.0",
         "uuid": "^9.0.0"
     },

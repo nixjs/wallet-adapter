@@ -37,7 +37,7 @@
         "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
     },
     "dependencies": {
-        "@mysten/sui.js": "^0.32.2",
+        "@mysten/sui.js": "^0.37.1",
         "@nixjs23n6/async-sema": "^0.0.1",
         "@nixjs23n6/objectify": ">=0.0.1",
         "@nixjs23n6/types": "^1.0.15",
